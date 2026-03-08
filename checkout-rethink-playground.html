@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nannimoon Checkout 3.0 — UX Rethink Playground</title>
+<style>
+  :root {
+    --brand: #fd026a;
+    --brand-light: #fdf2f8;
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #333;
+    --text: #e5e5e5;
+    --text-dim: #888;
+    --text-muted: #555;
+    --green: #22c55e;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .app { display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr auto; height: 100vh; }
+  .header { grid-column: 1 / -1; padding: 16px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 16px; font-weight: 700; }
+  .header h1 span { color: var(--brand); }
+  .header-badges { display: flex; gap: 8px; }
+  .badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 100px; background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+  .badge.active { background: var(--brand); color: white; border-color: var(--brand); }
+  .controls { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; }
+  .control-group { margin-bottom: 20px; }
+  .control-group-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .control-row { margin-bottom: 10px; }
+  .toggle-group { display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 8px; }
+  .toggle-btn { flex: 1; padding: 6px 10px; font-size: 11px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; background: transparent; color: var(--text-dim); transition: all 0.15s; }
+  .toggle-btn.active { background: var(--brand); color: white; }
+  .toggle-btn:hover:not(.active) { background: var(--surface2); color: var(--text); }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
+  .checkbox-row input[type="checkbox"] { accent-color: var(--brand); width: 14px; height: 14px; }
+  .checkbox-row span { font-size: 12px; }
+  .preset-btn { width: 100%; padding: 8px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--surface2); color: var(--text); transition: all 0.15s; margin-bottom: 6px; text-align: left; }
+  .preset-btn:hover { border-color: var(--brand); background: rgba(253, 2, 106, 0.08); }
+  .preset-btn .preset-desc { font-weight: 400; color: var(--text-dim); font-size: 10px; display: block; margin-top: 2px; }
+  .preview { overflow-y: auto; padding: 32px; background: var(--bg); }
+  .preview-container { max-width: 1000px; margin: 0 auto; }
+  .prompt-area { grid-column: 1 / -1; background: var(--surface); border-top: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: flex-start; gap: 16px; }
+  .prompt-text { flex: 1; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; max-height: 120px; overflow-y: auto; white-space: pre-wrap; }
+  .copy-btn { padding: 8px 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+  .copy-btn:hover { border-color: var(--brand); }
+  .copy-btn.copied { background: var(--brand); color: white; border-color: var(--brand); }
+  .flow-diagram { display: flex; align-items: center; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+  .flow-step-box { padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 2px solid #e5e5e5; color: #333; background: white; text-align: center; min-width: 100px; }
+  .flow-step-box.active { border-color: var(--brand); background: #fdf2f8; color: #fd026a; }
+  .flow-arrow { font-size: 16px; color: #666; }
+  .comparison-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #aaa; margin-bottom: 8px; }
+
+  /* ── Form field styling (matches Nannimoon brand) ── */
+  .field { flex: 1; min-width: 0; padding: 16px 0 0; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    margin-bottom: 8px;
+  }
+  .field-optional {}
+  .field-input {
+    width: 100%;
+    border: none;
+    border-bottom: 2.5px solid #e5e7eb;
+    outline: none;
+    font-size: 16px;
+    font-family: inherit;
+    color: #1f2937;
+    background: transparent;
+    padding: 8px 0 12px;
+    transition: border-color 0.25s ease;
+    letter-spacing: 0.01em;
+  }
+  .field-input::placeholder { color: #d1d5db; font-weight: 400; }
+  .field-input:focus { border-bottom-color: #fd026a; }
+  .field-micro {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 6px;
+    letter-spacing: 0.01em;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Nannimoon <span>Checkout 3.0</span> — UX Playground</h1>
+    <div class="header-badges">
+      <span class="badge" id="badge-phase">v3.0</span>
+      <span class="badge active" id="badge-view">Mobile</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <div class="control-group-title">Quick Start</div>
+      <button class="preset-btn" onclick="applyPreset('current')">Current (v2.0)<span class="preset-desc">Payment Choice > Card > Review</span></button>
+      <button class="preset-btn" onclick="applyPreset('recommended')">Recommended (v3.0)<span class="preset-desc">Details > Payment & Confirm, pills, timeline</span></button>
+      <button class="preset-btn" onclick="applyPreset('premium')">Premium Max<span class="preset-desc">+ PaymentElement, all features</span></button>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Device</div>
+      <div class="toggle-group">
+        <button class="toggle-btn" onclick="setView('desktop')" id="view-desktop">Desktop</button>
+        <button class="toggle-btn active" onclick="setView('mobile')" id="view-mobile">Mobile</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Checkout Flow</div>
+      <div class="toggle-group">
+        <button class="toggle-btn" onclick="setFlow('current')" id="flow-current">Current</button>
+        <button class="toggle-btn active" onclick="setFlow('new')" id="flow-new">New (Recommended)</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Show Step</div>
+      <div class="toggle-group" id="step-toggles">
+        <button class="toggle-btn active" onclick="setStep(1)" id="step-1">1</button>
+        <button class="toggle-btn" onclick="setStep(2)" id="step-2">2</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Trip Summary Style</div>
+      <div class="toggle-group">
+        <button class="toggle-btn" onclick="setSidebar('receipt')" id="sidebar-receipt">Receipt</button>
+        <button class="toggle-btn active" onclick="setSidebar('itinerary')" id="sidebar-itinerary">Itinerary</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Payment Form</div>
+      <div class="toggle-group">
+        <button class="toggle-btn" onclick="setStripe('card')" id="stripe-card">Card Only</button>
+        <button class="toggle-btn active" onclick="setStripe('payment')" id="stripe-payment">Card + Apple/Google Pay</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Button Shape</div>
+      <div class="toggle-group">
+        <button class="toggle-btn" onclick="setCta('rounded')" id="cta-rounded">Rounded</button>
+        <button class="toggle-btn active" onclick="setCta('pill')" id="cta-pill">Pill</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title">Show / Hide</div>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('splitPayment', this.checked)" id="feat-split"><span>Pay in 2 installments option</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('urgencyBadge', this.checked)" id="feat-urgency"><span>"Rare find" notice</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('trustBadges', this.checked)" id="feat-trust"><span>Trust icons (Stripe, support, etc.)</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('microcopy', this.checked)" id="feat-micro"><span>Helper text under fields</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('cancelPill', this.checked)" id="feat-cancel"><span>Free cancellation countdown</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('collapsibleRules', this.checked)" id="feat-rules"><span>Expandable nanny rules</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('actionCta', this.checked)" id="feat-action-cta"><span>Descriptive button labels</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('guestFav', this.checked)" id="feat-guest-fav"><span>"Guest favorite" badge</span></label>
+    </div>
+    <div class="control-group">
+      <div class="control-group-title" style="color:#fd026a">Psychology Phase 1</div>
+      <button class="preset-btn" style="border-color:#fd026a;background:rgba(253,2,106,0.06)" onclick="applyPsychAll(true)">Enable All Phase 1<span class="preset-desc">All 12 micro-copy enhancements</span></button>
+      <button class="preset-btn" onclick="applyPsychAll(false)">Disable All Phase 1<span class="preset-desc">Revert to current copy</span></button>
+      <div style="height:6px"></div>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyTitle', this.checked)" id="feat-psyTitle"><span>"Complete your booking" title</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psySubtitle', this.checked)" id="feat-psySubtitle"><span>"Takes about 2 minutes" hint</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyWhatsapp', this.checked)" id="feat-psyWhatsapp"><span>Warmer WhatsApp &amp; email hints</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyPlaceholders', this.checked)" id="feat-psyPlaceholders"><span>Real-world example placeholders</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyStripeTrust', this.checked)" id="feat-psyStripeTrust"><span>"Encrypted by Stripe" note</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psySplitCopy', this.checked)" id="feat-psySplitCopy"><span>"No interest" on split pay</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyCta', this.checked)" id="feat-psyCta"><span>"Secure Your Booking" button</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyTerms', this.checked)" id="feat-psyTerms"><span>Friendlier terms wording</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psySidebarOwnership', this.checked)" id="feat-psySidebarOwnership"><span>"Your nanny" &amp; "Your Trip" labels</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyNannyReview', this.checked)" id="feat-psyNannyReview"><span>Guest review quote</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyCancelCopy', this.checked)" id="feat-psyCancelCopy"><span>"Change of plans?" cancel text</span></label>
+      <label class="checkbox-row"><input type="checkbox" checked onchange="toggleFeature('psyProcessing', this.checked)" id="feat-psyProcessing"><span>"Securing your booking..." loading</span></label>
+    </div>
+  </div>
+
+  <div class="preview" id="preview"></div>
+
+  <div class="prompt-area">
+    <div class="prompt-text" id="prompt-output"></div>
+    <button class="copy-btn" id="copy-btn" onclick="copyPrompt()">Copy</button>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = { view:'mobile', flow:'new', step:1, sidebar:'itinerary', stripe:'payment', cta:'pill', splitPayment:true, urgencyBadge:true, trustBadges:true, microcopy:true, cancelPill:true, collapsibleRules:true, actionCta:true, guestFav:true, psyTitle:true, psySubtitle:true, psyWhatsapp:true, psyStripeTrust:true, psyCta:true, psyTerms:true, psySidebarOwnership:true, psyNannyReview:true, psyPlaceholders:true, psyCancelCopy:true, psySplitCopy:true, psyProcessing:true };
+const state = { ...DEFAULTS };
+
+function updateAll() { renderPreview(); updatePrompt(); updateBadges(); }
+
+function updateBadges() {
+  document.getElementById('badge-phase').textContent = state.flow === 'current' ? 'Current v2' : 'v3.0';
+  document.getElementById('badge-view').textContent = state.view === 'desktop' ? 'Desktop' : 'Mobile';
+}
+
+function setView(v) { state.view = v; document.getElementById('view-desktop').className = 'toggle-btn' + (v==='desktop'?' active':''); document.getElementById('view-mobile').className = 'toggle-btn' + (v==='mobile'?' active':''); updateAll(); }
+function setFlow(f) { state.flow = f; document.getElementById('flow-current').className = 'toggle-btn' + (f==='current'?' active':''); document.getElementById('flow-new').className = 'toggle-btn' + (f==='new'?' active':''); updateAll(); }
+function setStep(s) { if (state.flow==='new' && s > 2) s = 2; state.step = s; [1,2,3].forEach(i => { const el = document.getElementById('step-'+i); if (el) el.className = 'toggle-btn' + (i===s?' active':''); }); updateAll(); }
+function setSidebar(s) { state.sidebar = s; document.getElementById('sidebar-receipt').className = 'toggle-btn' + (s==='receipt'?' active':''); document.getElementById('sidebar-itinerary').className = 'toggle-btn' + (s==='itinerary'?' active':''); updateAll(); }
+function setStripe(s) { state.stripe = s; document.getElementById('stripe-card').className = 'toggle-btn' + (s==='card'?' active':''); document.getElementById('stripe-payment').className = 'toggle-btn' + (s==='payment'?' active':''); updateAll(); }
+function setCta(c) { state.cta = c; document.getElementById('cta-rounded').className = 'toggle-btn' + (c==='rounded'?' active':''); document.getElementById('cta-pill').className = 'toggle-btn' + (c==='pill'?' active':''); updateAll(); }
+function toggleFeature(f, v) { state[f] = v; updateAll(); }
+function applyPsychAll(on) { ['psyTitle','psySubtitle','psyWhatsapp','psyStripeTrust','psyCta','psyTerms','psySidebarOwnership','psyNannyReview','psyPlaceholders','psyCancelCopy','psySplitCopy','psyProcessing'].forEach(k => { state[k] = on; }); syncControls(); updateAll(); }
+
+function applyPreset(name) {
+  if (name==='current') Object.assign(state, { flow:'current', sidebar:'receipt', stripe:'card', cta:'rounded', splitPayment:true, urgencyBadge:false, trustBadges:false, microcopy:false, cancelPill:false, collapsibleRules:false, actionCta:false, guestFav:false, step:1 });
+  else if (name==='recommended') Object.assign(state, { flow:'new', sidebar:'itinerary', stripe:'card', cta:'pill', splitPayment:true, urgencyBadge:true, trustBadges:true, microcopy:true, cancelPill:true, collapsibleRules:true, actionCta:true, guestFav:true, step:1 });
+  else if (name==='premium') Object.assign(state, { flow:'new', sidebar:'itinerary', stripe:'payment', cta:'pill', splitPayment:true, urgencyBadge:true, trustBadges:true, microcopy:true, cancelPill:true, collapsibleRules:true, actionCta:true, guestFav:true, step:1 });
+  syncControls(); updateAll();
+}
+
+function syncControls() {
+  document.getElementById('flow-current').className = 'toggle-btn' + (state.flow==='current'?' active':'');
+  document.getElementById('flow-new').className = 'toggle-btn' + (state.flow==='new'?' active':'');
+  document.getElementById('sidebar-receipt').className = 'toggle-btn' + (state.sidebar==='receipt'?' active':'');
+  document.getElementById('sidebar-itinerary').className = 'toggle-btn' + (state.sidebar==='itinerary'?' active':'');
+  document.getElementById('stripe-card').className = 'toggle-btn' + (state.stripe==='card'?' active':'');
+  document.getElementById('stripe-payment').className = 'toggle-btn' + (state.stripe==='payment'?' active':'');
+  document.getElementById('cta-rounded').className = 'toggle-btn' + (state.cta==='rounded'?' active':'');
+  document.getElementById('cta-pill').className = 'toggle-btn' + (state.cta==='pill'?' active':'');
+  [1,2,3].forEach(i => { const el = document.getElementById('step-'+i); if (el) el.className = 'toggle-btn' + (i===state.step?' active':''); });
+  document.getElementById('feat-split').checked = state.splitPayment;
+  document.getElementById('feat-urgency').checked = state.urgencyBadge;
+  document.getElementById('feat-trust').checked = state.trustBadges;
+  document.getElementById('feat-micro').checked = state.microcopy;
+  document.getElementById('feat-cancel').checked = state.cancelPill;
+  document.getElementById('feat-rules').checked = state.collapsibleRules;
+  document.getElementById('feat-action-cta').checked = state.actionCta;
+  document.getElementById('feat-guest-fav').checked = state.guestFav;
+  ['psyTitle','psySubtitle','psyWhatsapp','psyStripeTrust','psyCta','psyTerms','psySidebarOwnership','psyNannyReview','psyPlaceholders','psyCancelCopy','psySplitCopy','psyProcessing'].forEach(k => { const el = document.getElementById('feat-'+k); if (el) el.checked = state[k]; });
+}
+
+function getSteps() {
+  if (state.flow==='current') return state.splitPayment ? ['Choose when to pay','Add a payment method','Review your request'] : ['Add a payment method','Review your request'];
+  return ['Your Details','Payment & Confirm'];
+}
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => { if (k==='style'&&typeof v==='object') Object.assign(e.style, v); else if (k==='className') e.className=v; else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v); else e.setAttribute(k, v); });
+  if (children) { if (typeof children==='string') e.textContent=children; else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(typeof c==='string' ? document.createTextNode(c) : c); }); else e.appendChild(children); }
+  return e;
+}
+
+function elHTML(tag, attrs, html) {
+  const e = el(tag, attrs);
+  // This playground is self-contained with only trusted static content
+  e.innerHTML = html;
+  return e;
+}
+
+function buildField(label, placeholder, value, micro, optional) {
+  const d = el('div', {className:'field'});
+  const lbl = el('div', {className:'field-label' + (optional&&state.microcopy?' field-optional':'')});
+  lbl.textContent = label;
+  if (optional && state.microcopy) {
+    const optSpan = el('span', {style:{color:'#ccc',fontWeight:'400'}}, ' (optional)');
+    lbl.appendChild(optSpan);
+  }
+  d.appendChild(lbl);
+  const inp = el('input', {className:'field-input', placeholder: placeholder||'', readonly: value?'readonly':undefined});
+  if (value) inp.value = value;
+  d.appendChild(inp);
+  if (micro && state.microcopy) d.appendChild(el('div', {className:'field-micro'}, micro));
+  return d;
+}
+
+function buildRadio(title, desc, selected) {
+  const opt = el('div', {className:'split-option' + (selected?' selected':'')});
+  const txt = el('div', {className:'split-option-text'}, [el('div', {className:'split-option-title'}, title), el('div', {className:'split-option-desc'}, desc)]);
+  const dot = el('div', {className:'radio-dot' + (selected?' active':'')});
+  if (selected) dot.appendChild(el('div', {style:{width:'6px',height:'6px',background:'white',borderRadius:'50%'}}));
+  opt.append(txt, dot);
+  return opt;
+}
+
+function buildTrustBadges() {
+  if (!state.trustBadges) return null;
+  const wrap = el('div', {style:{display:'flex',flexDirection:'column',gap:'10px',marginTop:'16px'}});
+  [['#dcfce7','#22c55e','Secure payment by Stripe'],['#fce7f3','#fd026a','Free nanny replacement'],['#dbeafe','#3b82f6','24/7 WhatsApp support']].forEach(([bg,color,text]) => {
+    const row = el('div', {style:{display:'flex',alignItems:'center',gap:'10px',fontSize:'12px',color:'#666'}});
+    const icon = el('div', {style:{width:'20px',height:'20px',borderRadius:'50%',background:bg,color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',flexShrink:'0'}}, '\u2713');
+    row.append(icon, el('span', null, text));
+    wrap.appendChild(row);
+  });
+  return wrap;
+}
+
+function buildCardElement() {
+  const mock = el('div', {style:{border:'1px solid #e5e5e5',borderRadius: state.cta==='pill'?'16px':'12px',overflow:'hidden'}});
+  if (state.stripe === 'payment') {
+    const express = el('div', {style:{display:'flex',gap:'8px',padding:'16px',borderBottom:'1px solid #f0f0f0'}});
+    const appleBtn = el('div', {style:{flex:'1',padding:'10px',border:'1px solid #e5e5e5',borderRadius:'8px',background:'#000',color:'white',fontSize:'12px',fontWeight:'600',textAlign:'center'}}, '\uF8FF Pay');
+    const gBtn = el('div', {style:{flex:'1',padding:'10px',border:'1px solid #e5e5e5',borderRadius:'8px',background:'white',color:'#333',fontSize:'12px',fontWeight:'600',textAlign:'center'}}, 'G Pay');
+    express.append(appleBtn, gBtn);
+    mock.appendChild(express);
+    mock.appendChild(el('div', {style:{padding:'12px 16px',textAlign:'center',fontSize:'11px',color:'#aaa',borderBottom:'1px solid #f0f0f0'}}, 'Or pay with card'));
+  } else {
+    const hdr = el('div', {style:{padding:'12px 16px',background:'#fafafa',borderBottom:'1px solid #f0f0f0',display:'flex',alignItems:'center',gap:'8px',fontSize:'13px',fontWeight:'700',color:'#333'}});
+    hdr.appendChild(el('div', {style:{width:'20px',height:'14px',background:'linear-gradient(135deg,#667eea,#764ba2)',borderRadius:'3px'}}));
+    hdr.appendChild(el('span', null, 'Credit or debit card'));
+    mock.appendChild(hdr);
+  }
+  const fields = el('div', {style:{padding:'20px'}});
+  const cardNum = buildField('Card Number', '4242 4242 4242 4242');
+  cardNum.style.marginBottom = '12px';
+  fields.appendChild(cardNum);
+  const row = el('div', {style:{display:'flex',gap:'16px'}});
+  row.append(buildField('Expiration', 'MM / YY'), buildField(state.stripe==='payment'?'CVC':'CVV', state.stripe==='payment'?'CVC':'123'));
+  fields.appendChild(row);
+  mock.appendChild(fields);
+  if (state.psyStripeTrust) {
+    const trustLine = el('div', {style:{padding:'10px 20px 14px',fontSize:'11px',color:'#999',borderTop:'1px solid #f0f0f0',display:'flex',alignItems:'center',gap:'6px'}});
+    trustLine.appendChild(el('span', {style:{fontSize:'13px'}}, '\uD83D\uDD12'));
+    trustLine.appendChild(document.createTextNode('Your card details are encrypted by Stripe. We never store your card number.'));
+    mock.appendChild(trustLine);
+  }
+  return mock;
+}
+
+function buildSidebar() {
+  const card = el('div', {style:{background:'white',border:'1px solid #e5e5e5',borderRadius:'16px',padding:'20px'}});
+
+  // Nanny card
+  const nanny = el('div', {style:{display:'flex',gap:'12px',marginBottom:'16px'}});
+  const avatarSize = state.sidebar==='itinerary' ? '80px' : '64px';
+  const avatar = el('div', {style:{width:avatarSize,height:avatarSize,borderRadius:'12px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L');
+  const info = el('div');
+  if (state.psySidebarOwnership) {
+    info.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'700',color:'#333'}}, 'Your nanny: Laila'));
+    info.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, 'Professional childcare for your family'));
+  } else {
+    info.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'700',color:'#333'}}, 'Professional Childcare with Laila'));
+  }
+  const rating = el('div', {style:{fontSize:'11px',color:'#888',marginTop:'3px'}});
+  rating.appendChild(el('span', {style:{color:'#fd026a'}}, '\u2605 '));
+  rating.appendChild(document.createTextNode('4.9 (42 reviews)'));
+  info.appendChild(rating);
+  if (state.guestFav) info.appendChild(el('div', {style:{display:'inline-block',fontSize:'9px',fontWeight:'700',background:'#fce4ec',color:'#fd026a',padding:'2px 8px',borderRadius:'100px',marginTop:'4px'}}, 'Guest favorite'));
+  nanny.append(avatar, info);
+  card.appendChild(nanny);
+  if (state.psyNannyReview) {
+    const review = el('div', {style:{background:'#fafafa',borderRadius:'10px',padding:'10px 12px',marginBottom:'16px',borderLeft:'3px solid #fd026a'}});
+    review.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontStyle:'italic',lineHeight:'1.5'}}, '"Laila was incredible with our 2-year-old. She felt like family."'));
+    review.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'4px',fontWeight:'600'}}, '\u2014 Sarah T., London'));
+    card.appendChild(review);
+  }
+
+  // Urgency
+  if (state.urgencyBadge) {
+    const urg = el('div', {style:{background:'#fdf2f8',border:'1px solid #fce4ec',borderRadius:'12px',padding:'12px',display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}});
+    urg.appendChild(el('div', {style:{width:'28px',height:'28px',borderRadius:'50%',background:'#fd026a',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',flexShrink:'0'}}, '\u2605'));
+    urg.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontWeight:'500',lineHeight:'1.4'}}, 'Rare find! Laila is usually booked for these dates.'));
+    card.appendChild(urg);
+  }
+
+  // Itinerary
+  const itin = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
+  const itinLabel = state.psySidebarOwnership ? 'Your Trip' : (state.sidebar==='itinerary'?'Your Trip':'Itinerary');
+  itin.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'10px'}}, itinLabel));
+
+  if (state.sidebar === 'itinerary') {
+    const tl = el('div', {style:{position:'relative',paddingLeft:'20px'}});
+    const line = el('div', {style:{position:'absolute',left:'5px',top:'8px',bottom:'8px',width:'2px',background:'#e5e5e5'}});
+    tl.appendChild(line);
+    [['Phuket','Feb 25 \u2013 Feb 27','Hotel Paradise'],['Krabi','Feb 27 \u2013 Feb 28','Villa Sunset']].forEach(([dest,dates,hotel],i) => {
+      const item = el('div', {style:{position:'relative',paddingBottom: i===0?'14px':'0'}});
+      item.appendChild(el('div', {style:{position:'absolute',left:'-20px',top:'4px',width:'12px',height:'12px',borderRadius:'50%',background:'white',border:'3px solid #fd026a'}}));
+      item.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, dest));
+      item.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, dates));
+      item.appendChild(el('div', {style:{fontSize:'10px',color:'#fd026a',marginTop:'2px',fontStyle:'italic'}}, hotel));
+      tl.appendChild(item);
+    });
+    itin.appendChild(tl);
+  } else {
+    [['Phuket','25/02 \u2013 27/02'],['Krabi','27/02 \u2013 28/02']].forEach(([name,dates]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+      row.append(el('span', {style:{color:'#666'}}, '\uD83D\uDCCD ' + name), el('span', {style:{color:'#333',fontWeight:'500'}}, dates));
+      itin.appendChild(row);
+    });
+  }
+  card.appendChild(itin);
+
+  // Free cancel
+  const cancel = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
+  if (state.cancelPill) {
+    cancel.appendChild(el('div', {style:{display:'inline-flex',alignItems:'center',gap:'6px',background:'#dcfce7',color:'#166534',fontSize:'11px',fontWeight:'600',padding:'5px 12px',borderRadius:'100px'}}, '\u2713 Free cancellation \u2014 12 days remaining'));
+    if (state.psyCancelCopy) {
+      cancel.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'6px',marginLeft:'2px'}}, 'Change of plans? No penalty before Jan 25.'));
+    }
+  } else {
+    cancel.appendChild(el('div', {style:{fontSize:'12px',fontWeight:'700',color:'#333',marginBottom:'4px'}}, 'Free cancellation'));
+    cancel.appendChild(el('div', {style:{fontSize:'11px',color:'#888'}}, state.psyCancelCopy ? 'Change of plans? No penalty before Jan 25, 2026.' : 'Cancel before Jan 25, 2026 for a full refund.'));
+  }
+  card.appendChild(cancel);
+
+  // Price
+  const price = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
+  price.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111',marginBottom:'12px'}}, 'Price details'));
+  [['$89.00 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([label,val]) => {
+    const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'#666',padding:'4px 0'}});
+    row.append(el('span', {style:{textDecoration:'underline'}}, label), el('span', null, val));
+    price.appendChild(row);
+  });
+  if (state.splitPayment) {
+    const due = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'14px',fontWeight:'700',color:'#111',marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #f0f0f0'}});
+    due.append(el('span', null, 'Due today'), el('span', null, '$272.61'));
+    price.appendChild(due);
+    const later = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'#666',padding:'4px 0'}});
+    later.append(el('span', null, 'Due Feb 18'), el('span', null, '$272.61'));
+    price.appendChild(later);
+  }
+  const total = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'15px',fontWeight:'700',color:'#111',paddingTop:'10px',marginTop:'8px',borderTop:'1px solid #f0f0f0'}});
+  total.append(el('span', null, 'Total (USD)'), el('span', null, '$545.22'));
+  price.appendChild(total);
+  card.appendChild(price);
+
+  // Trust
+  const trust = buildTrustBadges();
+  if (trust) {
+    trust.style.paddingTop = '12px';
+    trust.style.borderTop = '1px solid #f0f0f0';
+    trust.style.marginTop = '12px';
+    card.appendChild(trust);
+  }
+
+  return card;
+}
+
+function buildStepContent(stepName) {
+  const br = state.cta==='pill' ? '100px' : '12px';
+  const wrap = el('div', {style:{marginTop:'16px'}});
+
+  if (stepName === 'Your details') {
+    const row1 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    row1.append(buildField('First Name','','Adam'), buildField('Last Name','Required','Oliver'));
+    wrap.appendChild(row1);
+    const row2 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    const whatsappMicro = state.psyWhatsapp ? "We'll send your nanny's intro and trip updates here" : 'For WhatsApp booking updates';
+    const emailMicro = state.psyWhatsapp ? "We'll send your booking confirmation here" : null;
+    row2.append(buildField('Email','','adam@email.com', emailMicro), buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', whatsappMicro));
+    wrap.appendChild(row2);
+    const row2b = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    row2b.append(buildField(state.psyPlaceholders ? 'How many children?' : 'Number of Children','','2'));
+    wrap.appendChild(row2b);
+    const row3 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    const accomPlaceholder = state.psyPlaceholders ? 'e.g., Banyan Tree Phuket' : 'Where are you staying?';
+    row3.append(buildField('Phuket Hotel / Villa', accomPlaceholder,'',null,true), buildField('Krabi Hotel / Villa', state.psyPlaceholders?'e.g., Rayavadee Krabi':'Where are you staying?','',null,true));
+    wrap.appendChild(row3);
+    wrap.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm' or 'nut allergy'":'Allergies, special needs, etc.','',null,true));
+    const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'16px'}});
+    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, state.actionCta?'Continue to payment':'Next'));
+    wrap.appendChild(btnWrap);
+  }
+
+  else if (stepName === 'Payment' || stepName === 'Add a payment method') {
+    if (state.splitPayment && state.flow === 'new') {
+      const splitDesc = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
+      const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius: state.cta==='pill'?'16px':'12px',overflow:'hidden',marginBottom:'20px'}});
+      split.append(buildRadio('Pay $272.61 now', splitDesc, true), buildRadio('Pay $545.22 now','Pay the total and you\'re all set.',false));
+      wrap.appendChild(split);
+    }
+    wrap.appendChild(buildCardElement());
+    const trust = buildTrustBadges();
+    if (trust) wrap.appendChild(trust);
+    const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'16px'}});
+    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, state.actionCta?'Save & continue':'Next'));
+    wrap.appendChild(btnWrap);
+  }
+
+  else if (stepName === 'Payment & Confirm') {
+    // Payment fields
+    if (state.splitPayment) {
+      const splitDesc2 = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
+      const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius: state.cta==='pill'?'16px':'12px',overflow:'hidden',marginBottom:'20px'}});
+      split.append(buildRadio('Pay $272.61 now', splitDesc2, true), buildRadio('Pay $545.22 now','Pay the total and you\'re all set.',false));
+      wrap.appendChild(split);
+    }
+    wrap.appendChild(buildCardElement());
+    const trust = buildTrustBadges();
+    if (trust) wrap.appendChild(trust);
+
+    // Booking summary
+    const summary = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',marginBottom:'16px',marginTop:'24px'}});
+    summary.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Booking summary'));
+    // Reservation details
+    [['Nanny','Laila'],['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28'],['Duration','4 days']].forEach(([l,v]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+      row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
+      summary.appendChild(row);
+    });
+    // Price breakdown
+    summary.appendChild(el('div', {style:{borderTop:'1px solid #e5e5e5',margin:'6px 0'}}));
+    [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+      row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
+      summary.appendChild(row);
+    });
+    const totalRow = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0',fontWeight:'700',color:'#111'}});
+    totalRow.append(el('span', null, 'Total'), el('span', null, '$545.22'));
+    summary.appendChild(totalRow);
+    // Guest details
+    summary.appendChild(el('div', {style:{borderTop:'1px solid #e5e5e5',margin:'6px 0'}}));
+    [['Name','Adam Oliver'],['Email','adam@email.com'],['Phone','+1 555 000-0000'],['Children','2'],['Phuket accommodation','Hotel Paradise']].forEach(([l,v]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+      row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
+      summary.appendChild(row);
+    });
+    summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onClick:()=>setStep(1)}, 'Edit details'));
+    wrap.appendChild(summary);
+
+    // Rules
+    if (state.collapsibleRules) {
+      const rules = el('div', {style:{border:'1px solid #f0f0f0',borderRadius:'12px',overflow:'hidden',marginBottom:'16px'}});
+      const hdr = el('div', {style:{padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontSize:'14px',fontWeight:'600',color:'#333',background:'#fafafa'}});
+      hdr.appendChild(document.createTextNode('House rules for your booking'));
+      const chevron = el('span', {style:{fontSize:'12px',color:'#aaa',transition:'transform 0.2s'}}, '\u25BC');
+      hdr.appendChild(chevron);
+      const body = el('div', {style:{padding:'0 16px',maxHeight:'0',overflow:'hidden',transition:'all 0.3s'}});
+      body.appendChild(el('div', {style:{paddingTop:'16px',paddingBottom:'16px'}}));
+      hdr.addEventListener('click', () => {
+        if (body.style.maxHeight === '0px' || body.style.maxHeight === '0') {
+          body.style.maxHeight = '300px';
+          body.style.padding = '16px';
+          chevron.style.transform = 'rotate(180deg)';
+        } else {
+          body.style.maxHeight = '0';
+          body.style.padding = '0 16px';
+          chevron.style.transform = '';
+        }
+      });
+      const poolWarn = el('div', {style:{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:'10px',padding:'12px',marginBottom:'10px',fontSize:'11px',color:'#991b1b'}});
+      poolWarn.appendChild(el('strong', null, '\u26A0 Pool Supervision: '));
+      poolWarn.appendChild(document.createTextNode('Nannies supervise children at the pool only when a parent is present.'));
+      body.firstChild.appendChild(poolWarn);
+      [['\uD83C\uDF7D\uFE0F','Invite to family meals or provide 200 THB per meal.'],['\uD83D\uDC65','Strictly for one family only. Shared services not permitted.']].forEach(([icon,text]) => {
+        const item = el('div', {style:{fontSize:'12px',color:'#666',padding:'6px 0',display:'flex',alignItems:'flex-start',gap:'8px'}});
+        item.append(el('span', {style:{fontSize:'14px',flexShrink:'0'}}, icon), el('span', null, text));
+        body.firstChild.appendChild(item);
+      });
+      rules.append(hdr, body);
+      wrap.appendChild(rules);
+    }
+
+    // Cancel tiers
+    const tiers = el('div', {style:{marginBottom:'16px'}});
+    tiers.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Cancellation Policy'));
+    [['#22c55e','Free cancellation (net of 5% processing fees)'],['#f59e0b','Partial refund (80%)'],['#ef4444','No refund']].forEach(([color,text]) => {
+      const tier = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'8px',padding:'4px 0',fontSize:'12px',color:'#666'}});
+      tier.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:color,marginTop:'4px',flexShrink:'0'}}));
+      tier.appendChild(el('span', null, text));
+      tiers.appendChild(tier);
+    });
+    const trial = el('div', {style:{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',padding:'10px 12px',fontSize:'11px',color:'#1e40af',marginTop:'8px',display:'flex',alignItems:'flex-start',gap:'8px'}});
+    trial.append(el('span', null, '\u267B'), el('span', null, '72-hour trial period: If there\'s no connection, we replace her at no cost or issue a refund.'));
+    tiers.appendChild(trial);
+    wrap.appendChild(tiers);
+
+    // Terms
+    const terms = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px',marginTop:'16px'}});
+    const check = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
+    check.checked = true;
+    const txt = el('div', {style:{fontSize:'11px',color:'#888',lineHeight:'1.5'}});
+    if (state.psyTerms) {
+      txt.appendChild(document.createTextNode('Your payment is secure. I agree to the '));
+      txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Cancellation Policy'));
+      txt.appendChild(document.createTextNode(' and '));
+      txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Terms of Service'));
+      txt.appendChild(document.createTextNode('.'));
+    } else {
+      txt.appendChild(document.createTextNode('By selecting below, I agree to the '));
+      txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Cancellation Policy'));
+      txt.appendChild(document.createTextNode(' and '));
+      txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Terms of Service'));
+      txt.appendChild(document.createTextNode('. I authorize Nannimoon to charge my payment method.'));
+    }
+    terms.append(check, txt);
+    wrap.appendChild(terms);
+
+    // CTA
+    const ctaText = state.psyCta ? 'Secure Your Booking' : 'Confirm & Reserve';
+    const ctaBtn = el('button', {style:{width:'100%',marginTop:'20px',padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#fd026a',borderRadius:br}}, ctaText);
+    wrap.appendChild(ctaBtn);
+    if (state.psySubtitle) {
+      wrap.appendChild(el('div', {style:{textAlign:'center',fontSize:'11px',color:'#999',marginTop:'8px'}}, 'Your 4-day trip with Laila is ready to confirm.'));
+    }
+  }
+
+  else if (stepName === 'Confirm & reserve') {
+    // Legacy — kept for current flow compatibility
+    return buildStepContent('Payment & Confirm');
+  }
+
+  else if (stepName === 'Choose when to pay') {
+    const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'12px',overflow:'hidden',marginBottom:'20px'}});
+    split.append(buildRadio('Pay $545.22 now','Pay the total and you\'re all set.',false), buildRadio('Pay $272.61 now','$272.61 charged on Feb 18. No extra fees.',true));
+    wrap.appendChild(split);
+    const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end'}});
+    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:'12px'}}, 'Next'));
+    wrap.appendChild(btnWrap);
+  }
+
+  else if (stepName === 'Review your request') {
+    wrap.appendChild(document.createTextNode(''));
+    return buildStepContent('Your details');
+  }
+
+  return wrap;
+}
+
+function renderDesktop() {
+  const preview = document.getElementById('preview');
+  preview.replaceChildren();
+  const container = el('div', {style:{maxWidth:'1000px',margin:'0 auto'}});
+
+  // Label
+  container.appendChild(el('div', {className:'comparison-label'}, state.flow==='new'?'New Flow (v3.0)':'Current Flow (v2.0)'));
+
+  // Flow diagram
+  const steps = getSteps();
+  const flow = el('div', {className:'flow-diagram'});
+  steps.forEach((s,i) => {
+    flow.appendChild(el('div', {className:'flow-step-box' + ((i+1)===state.step?' active':'')}, s));
+    if (i < steps.length-1) flow.appendChild(el('div', {className:'flow-arrow'}, '\u2192'));
+  });
+  container.appendChild(flow);
+
+  // Checkout mock
+  const mock = el('div', {style:{background:'white',borderRadius:'16px',overflow:'hidden',boxShadow:'0 8px 32px rgba(0,0,0,0.4)'}});
+  const desktop = el('div', {style:{display:'flex',minHeight:'700px'}});
+
+  // Steps column
+  const stepsCol = el('div', {style:{flex:'1',padding:'32px',minWidth:'0'}});
+  const titleText = state.flow==='new' ? (state.psyTitle ? 'Complete your booking' : 'Request to book') : 'Request to book';
+  stepsCol.appendChild(el('div', {style:{fontSize:'22px',fontWeight:'700',color:'#111',marginBottom: state.psySubtitle&&state.flow==='new'?'4px':'24px'}}, titleText));
+  if (state.psySubtitle && state.flow==='new') stepsCol.appendChild(el('div', {style:{fontSize:'13px',color:'#999',marginBottom:'24px'}}, 'Just 3 steps \u2014 takes about 2 minutes'));
+
+  steps.forEach((step, i) => {
+    const isActive = (i+1) === state.step;
+    const isDone = (i+1) < state.step;
+    const isLocked = !isActive && !isDone;
+    const item = el('div', {style:{padding:'20px 0',borderBottom:'1px solid #f0f0f0',opacity:isLocked?'0.35':'1',transition:'opacity 0.3s'}});
+    const hdr = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center'}});
+    const h3 = el('h3', {style:{fontSize:'16px',fontWeight:'700',color:'#111'}});
+    h3.appendChild(el('span', {style:{color:'#fd026a',marginRight:'4px'}}, (i+1)+'.'));
+    h3.appendChild(document.createTextNode(' '+step));
+    hdr.appendChild(h3);
+    if (isDone) hdr.appendChild(el('button', {style:{fontSize:'12px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',background:'none',border:'none'},onClick:()=>setStep(i+1)}, 'Edit'));
+    item.appendChild(hdr);
+    if (isActive) item.appendChild(buildStepContent(step));
+    stepsCol.appendChild(item);
+  });
+  desktop.appendChild(stepsCol);
+
+  // Sidebar
+  const sidebarWrap = el('div', {style:{width:'360px',flexShrink:'0',padding:'32px',borderLeft:'1px solid #f0f0f0',background:'#fafafa'}});
+  sidebarWrap.appendChild(buildSidebar());
+  desktop.appendChild(sidebarWrap);
+
+  mock.appendChild(desktop);
+  container.appendChild(mock);
+  preview.appendChild(container);
+}
+
+function renderMobile() {
+  const preview = document.getElementById('preview');
+  preview.replaceChildren();
+  const container = el('div', {style:{maxWidth:'400px',margin:'0 auto'}});
+
+  const pages = state.flow==='new' ? ['Your Details','Payment & Confirm'] : ['Review and Pay','Payment Method','Guest Details'];
+  const page = state.step;
+
+  // Label
+  container.appendChild(el('div', {className:'comparison-label'}, state.flow==='new'?'New Mobile Flow (v3.0)':'Current Mobile Flow (v2.0)'));
+
+  // Flow diagram
+  const flow = el('div', {className:'flow-diagram'});
+  pages.forEach((p,i) => {
+    flow.appendChild(el('div', {className:'flow-step-box' + ((i+1)===page?' active':''), style:{fontSize:'10px',minWidth:'80px',padding:'8px 10px'}}, p));
+    if (i < pages.length-1) flow.appendChild(el('div', {className:'flow-arrow'}, '\u2192'));
+  });
+  container.appendChild(flow);
+
+  // Phone mock
+  const mock = el('div', {style:{background:'white',borderRadius:'16px',overflow:'hidden',boxShadow:'0 8px 32px rgba(0,0,0,0.4)',position:'relative',minHeight:'700px',display:'flex',flexDirection:'column'}});
+
+  // Header
+  const header = el('div', {style:{padding:'16px 20px 12px',borderBottom:'1px solid #f0f0f0',background:'white',position:'sticky',top:'0',zIndex:'10'}});
+  const nav = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}});
+  if (state.flow==='new' && page===1) { nav.appendChild(el('div', {style:{width:'32px',height:'32px'}})); }
+  else { nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'},onClick:()=>{if(state.step>1)setStep(state.step-1)}}, '\u2190')); }
+  nav.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111'}}, pages[page-1]));
+  nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'}}, '\u2715'));
+  header.appendChild(nav);
+  const progress = el('div', {style:{display:'flex',gap:'4px',height:'4px'}});
+  const numSegments = state.flow==='new' ? 2 : 3;
+  for (let s = 1; s <= numSegments; s++) progress.appendChild(el('div', {style:{flex:'1',borderRadius:'100px',background:s<=page?'#fd026a':'#e5e5e5',transition:'background 0.3s'}}));
+  header.appendChild(progress);
+  mock.appendChild(header);
+
+  // Content
+  const content = el('div', {style:{flex:'1',padding:'20px',overflow:'auto',paddingBottom:'100px'}});
+
+  if (state.flow === 'new') {
+    if (page === 1) {
+      // Your Details form first
+      const mobileTitle = state.psyTitle ? 'Complete your booking' : 'Your details';
+      const titleEl = el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom: state.psySubtitle?'4px':'20px'}}, mobileTitle);
+      content.appendChild(titleEl);
+      if (state.psySubtitle) content.appendChild(el('div', {style:{fontSize:'12px',color:'#999',marginBottom:'20px'}}, 'Just 2 steps \u2014 takes about 2 minutes'));
+      const row1 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+      row1.append(buildField('First Name','','Adam'), buildField('Last Name','Required','Oliver'));
+      content.appendChild(row1);
+      content.appendChild(buildField('Email','','adam@email.com', state.psyWhatsapp?"We'll send your booking confirmation here":null));
+      content.lastChild.style.marginBottom = '16px';
+      content.appendChild(buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', state.psyWhatsapp?"We'll send your nanny's intro and trip updates here":'For WhatsApp booking updates'));
+      content.lastChild.style.marginBottom = '16px';
+      content.appendChild(buildField(state.psyPlaceholders?'How many children?':'Number of Children','','2'));
+      content.lastChild.style.marginBottom = '16px';
+      content.appendChild(buildField('Phuket Hotel / Villa', state.psyPlaceholders?'e.g., Banyan Tree Phuket':'Where are you staying?','',null,true));
+      content.lastChild.style.marginBottom = '16px';
+      content.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm'":'Allergies, special needs...','',null,true));
+
+      // Review your booking below
+      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px',marginTop:'32px'}}, 'Review your booking'));
+      // Nanny card
+      const nanny = el('div', {style:{display:'flex',gap:'12px',marginBottom:'16px'}});
+      nanny.appendChild(el('div', {style:{width:'64px',height:'64px',borderRadius:'12px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
+      const info = el('div');
+      if (state.psySidebarOwnership) {
+        info.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Your nanny: Laila'));
+        info.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, 'Professional childcare for your family'));
+      } else {
+        info.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Professional Care with Laila'));
+      }
+      const rat = el('div', {style:{fontSize:'11px',color:'#888'}});
+      rat.appendChild(el('span', {style:{color:'#fd026a'}}, '\u2605 '));
+      rat.appendChild(document.createTextNode('4.9 \u00B7 Guest favorite'));
+      info.appendChild(rat);
+      nanny.appendChild(info);
+      content.appendChild(nanny);
+      if (state.psyNannyReview) {
+        const mobReview = el('div', {style:{background:'#fafafa',borderRadius:'10px',padding:'10px 12px',marginBottom:'16px',borderLeft:'3px solid #fd026a'}});
+        mobReview.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontStyle:'italic',lineHeight:'1.5'}}, '"Laila was incredible with our 2-year-old. She felt like family."'));
+        mobReview.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'4px',fontWeight:'600'}}, '\u2014 Sarah T., London'));
+        content.appendChild(mobReview);
+      }
+      if (state.urgencyBadge) {
+        const urg = el('div', {style:{background:'#fdf2f8',border:'1px solid #fce4ec',borderRadius:'12px',padding:'12px',display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}});
+        urg.appendChild(el('div', {style:{width:'28px',height:'28px',borderRadius:'50%',background:'#fd026a',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',flexShrink:'0'}}, '\u2605'));
+        urg.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontWeight:'500'}}, 'Rare find! Laila is usually booked for these dates.'));
+        content.appendChild(urg);
+      }
+      // Trip summary
+      const trip = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',border:'1px solid #e5e5e5',marginBottom:'16px'}});
+      trip.appendChild(el('div', {style:{fontSize:'10px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'10px'}}, 'Your Trip'));
+      const tl = el('div', {style:{position:'relative',paddingLeft:'20px'}});
+      tl.appendChild(el('div', {style:{position:'absolute',left:'5px',top:'8px',bottom:'8px',width:'2px',background:'#e5e5e5'}}));
+      [['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28']].forEach(([d,dt],i) => {
+        const item = el('div', {style:{position:'relative',paddingBottom:i===0?'14px':'0'}});
+        item.appendChild(el('div', {style:{position:'absolute',left:'-20px',top:'4px',width:'12px',height:'12px',borderRadius:'50%',background:'white',border:'3px solid #fd026a'}}));
+        item.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, d));
+        item.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, dt));
+        tl.appendChild(item);
+      });
+      trip.appendChild(tl);
+      const priceDiv = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'12px',paddingTop:'12px'}});
+      [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'#666',padding:'4px 0'}});
+        row.append(el('span', null, l), el('span', null, v));
+        priceDiv.appendChild(row);
+      });
+      trip.appendChild(priceDiv);
+      content.appendChild(trip);
+    } else {
+      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, 'Pay & confirm'));
+      content.appendChild(buildCardElement());
+      content.lastChild.style.marginBottom = '16px';
+      const trust = buildTrustBadges();
+      if (trust) { trust.style.marginBottom = '16px'; content.appendChild(trust); }
+      // Booking summary
+      const summary = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',marginBottom:'16px'}});
+      summary.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Booking summary'));
+      // Reservation details
+      [['Nanny','Laila'],['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28'],['Duration','4 days']].forEach(([l,v]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+        row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
+        summary.appendChild(row);
+      });
+      // Price breakdown
+      const priceSep = el('div', {style:{borderTop:'1px solid #e5e5e5',margin:'6px 0'}});
+      summary.appendChild(priceSep);
+      [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+        row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
+        summary.appendChild(row);
+      });
+      const totalRow = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0',fontWeight:'700',color:'#111'}});
+      totalRow.append(el('span', null, 'Total'), el('span', null, '$545.22'));
+      summary.appendChild(totalRow);
+      // Guest details
+      const guestSep = el('div', {style:{borderTop:'1px solid #e5e5e5',margin:'6px 0'}});
+      summary.appendChild(guestSep);
+      [['Name','Adam Oliver'],['Email','adam@email.com'],['Phone','+1 555 000-0000'],['Children','2'],['Phuket accommodation','Hotel Paradise']].forEach(([l,v]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
+        row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
+        summary.appendChild(row);
+      });
+      summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onClick:()=>setStep(1)}, 'Edit details'));
+      content.appendChild(summary);
+      // Cancel tiers
+      const tiers = el('div', {style:{marginBottom:'16px'}});
+      [['#22c55e','Free cancel (net 5%)'],['#f59e0b','80% refund'],['#ef4444','No refund']].forEach(([c,t]) => {
+        const tier = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'8px',padding:'4px 0',fontSize:'12px',color:'#666'}});
+        tier.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:c,marginTop:'4px',flexShrink:'0'}}));
+        tier.appendChild(el('span', null, t));
+        tiers.appendChild(tier);
+      });
+      content.appendChild(tiers);
+      // Terms
+      const terms = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px'}});
+      const chk = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
+      chk.checked = true;
+      const txt = el('div', {style:{fontSize:'11px',color:'#888',lineHeight:'1.5'}});
+      if (state.psyTerms) {
+        txt.appendChild(document.createTextNode('Your payment is secure. I agree to the '));
+        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Cancellation Policy'));
+        txt.appendChild(document.createTextNode(' and '));
+        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Terms'));
+        txt.appendChild(document.createTextNode('.'));
+      } else {
+        txt.appendChild(document.createTextNode('I agree to the '));
+        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Cancellation Policy'));
+        txt.appendChild(document.createTextNode(' and '));
+        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Terms'));
+        txt.appendChild(document.createTextNode('.'));
+      }
+      terms.append(chk, txt);
+      content.appendChild(terms);
+    }
+  } else {
+    content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, pages[page-1]));
+    content.appendChild(el('div', {style:{color:'#888',fontSize:'13px'}}, 'Current v2 layout \u2014 switch to v3 to see the redesign'));
+  }
+
+  mock.appendChild(content);
+
+  // Sticky bar
+  const bar = el('div', {style:{position:'absolute',bottom:'0',left:'0',right:'0',background:'white',borderTop:'1px solid #f0f0f0',padding:'14px 20px',display:'flex',alignItems:'center',gap:'16px',boxShadow:'0 -4px 12px rgba(0,0,0,0.05)'}});
+  const showPrice = !(state.flow==='new' && page===1);
+  if (showPrice) {
+    const priceWrap = el('div', {style:{minWidth:'80px'}});
+    priceWrap.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'800',color:'#111'}}, state.splitPayment?'$272.61':'$545.22'));
+    priceWrap.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'700',textTransform:'uppercase',color:'#aaa',letterSpacing:'0.03em'}}, state.splitPayment?'Due today':'Total'));
+    bar.appendChild(priceWrap);
+  }
+  const maxSteps = state.flow==='new' ? 2 : 3;
+  const ctaLabels = state.flow==='new' ? ['Continue to payment', state.psyCta?'Secure Your Booking':'Confirm and pay'] : ['Next','Continue','Confirm & Reserve'];
+  const cta = el('button', {style:{flex:'1',padding:'14px',border:'none',borderRadius:state.cta==='pill'?'100px':'12px',fontSize:'14px',fontWeight:'700',color:'white',background:'#fd026a',cursor:'pointer',textAlign:'center'},onClick:()=>{if(state.step<maxSteps)setStep(state.step+1)}}, ctaLabels[page-1]);
+  bar.appendChild(cta);
+  mock.appendChild(bar);
+
+  container.appendChild(mock);
+  preview.appendChild(container);
+}
+
+function renderPreview() {
+  if (state.view === 'desktop') renderDesktop();
+  else renderMobile();
+}
+
+function updatePrompt() {
+  const parts = ['Implement the Nannimoon Checkout 3.0 redesign with these specifications:'];
+  if (state.flow !== 'current') parts.push('\n\nSTEP ORDER: 2-step flow — Your Details (+ booking review) \u2192 Payment & Confirm.');
+  if (state.cta === 'pill') parts.push('\nCTA STYLE: All buttons use pill shape (rounded-full / border-radius: 100px) to match Nannimoon brand.');
+  if (state.sidebar === 'itinerary') parts.push('\nSIDEBAR: Redesign as premium itinerary with vertical timeline dots, connecting line, reactive hotel names.');
+  if (state.stripe === 'payment') parts.push('\nSTRIPE: Migrate from individual CardElements to unified PaymentElement (includes Apple Pay, Google Pay, Link). Requires PHP change to provide clientSecret.');
+  if (state.urgencyBadge) parts.push('\nURGENCY: Move badge to position 2 (below nanny card, above itinerary).');
+  if (state.cancelPill) parts.push('\nCANCELLATION: Show as green pill with "X days remaining" countdown.');
+  if (state.trustBadges) parts.push('\nTRUST: Add trust signal row (secure payment, free replacement, 24/7 support) in sidebar and payment step.');
+  if (state.microcopy) parts.push('\nMICROCOPY: Add "(optional)" to non-required fields. Add "For WhatsApp booking updates" below phone.');
+  parts.push('\nFIELD: Add editable "Number of Children" field in Your Details step (pre-populated from booking data, user can change).');
+  if (state.collapsibleRules) parts.push('\nRULES: Nanny rules as collapsible accordion (collapsed by default). Pool supervision keeps red warning card.');
+  if (state.actionCta) parts.push('\nCTA LABELS: "Continue to payment" \u2192 "Confirm & Reserve". Mobile final: "Pay $X \u2014 Reserve".');
+  if (state.guestFav) parts.push('\nBADGE: Add "Guest favorite" pill badge on nanny card when rating > 4.5.');
+  const psyEnabled = ['psyTitle','psySubtitle','psyWhatsapp','psyStripeTrust','psyCta','psyTerms','psySidebarOwnership','psyNannyReview','psyPlaceholders','psyCancelCopy','psySplitCopy','psyProcessing'].filter(k => state[k]);
+  if (psyEnabled.length > 0) {
+    parts.push('\n\nPSYCHOLOGY PHASE 1 MICRO-COPY:');
+    if (state.psyTitle) parts.push('\n- Page title: "Complete your booking" (endowment effect)');
+    if (state.psySubtitle) parts.push('\n- Subtitle: "Just 3 steps \u2014 takes about 2 minutes" (cognitive ease)');
+    if (state.psyWhatsapp) parts.push('\n- WhatsApp micro: "We\'ll send your nanny\'s intro and trip updates here" (value framing)');
+    if (state.psyPlaceholders) parts.push('\n- Smarter placeholders: "e.g., Banyan Tree Phuket", "e.g., \'My toddler naps at 1pm\'" (cognitive ease)');
+    if (state.psyStripeTrust) parts.push('\n- Stripe trust line below card: "Your card details are encrypted by Stripe. We never store your card number." (trust)');
+    if (state.psySplitCopy) parts.push('\n- Split pay: "No extra fees, no interest. Automatic charge." (trust + friction reduction)');
+    if (state.psyCta) parts.push('\n- Final CTA: "Secure Your Booking" (loss aversion + ownership)');
+    if (state.psyTerms) parts.push('\n- Terms: "Your payment is secure. I agree to..." (positive framing)');
+    if (state.psySidebarOwnership) parts.push('\n- Sidebar: "Your nanny: Laila" + "Your Trip" (endowment effect)');
+    if (state.psyNannyReview) parts.push('\n- Curated review quote below nanny card (social proof)');
+    if (state.psyCancelCopy) parts.push('\n- Cancel: "Change of plans? No penalty before..." (trust + reassurance)');
+    if (state.psyProcessing) parts.push('\n- Processing button: "Securing your booking..." (ownership language)');
+  }
+  parts.push('\n\nSee CHECKOUT_PSYCHOLOGY_RESEARCH.md for full research and rationale.');
+  document.getElementById('prompt-output').textContent = parts.join('');
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+updateAll();
+</script>
+</body>
+</html>
