@@ -45,16 +45,21 @@
   .preset-btn .preset-desc { font-weight: 400; color: var(--text-dim); font-size: 10px; display: block; margin-top: 2px; }
   .preview { overflow-y: auto; padding: 32px; background: var(--bg); }
   .preview-container { max-width: 1000px; margin: 0 auto; }
-  .prompt-area { grid-column: 1 / -1; background: var(--surface); border-top: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: flex-start; gap: 16px; }
-  .prompt-text { flex: 1; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; max-height: 120px; overflow-y: auto; white-space: pre-wrap; }
-  .copy-btn { padding: 8px 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
-  .copy-btn:hover { border-color: var(--brand); }
-  .copy-btn.copied { background: var(--brand); color: white; border-color: var(--brand); }
   .flow-diagram { display: flex; align-items: center; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
   .flow-step-box { padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 2px solid #e5e5e5; color: #333; background: white; text-align: center; min-width: 100px; }
   .flow-step-box.active { border-color: var(--brand); background: #fdf2f8; color: #fd026a; }
   .flow-arrow { font-size: 16px; color: #666; }
   .comparison-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #aaa; margin-bottom: 8px; }
+
+  /* ── Split payment radio options ── */
+  .split-option { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; border-bottom:1px solid #e5e5e5; background:white; transition:background 0.15s; }
+  .split-option:last-child { border-bottom:none; }
+  .split-option.selected { background:#fdf2f8; }
+  .split-option-text { flex:1; }
+  .split-option-title { font-size:14px; font-weight:700; color:#111; margin-bottom:3px; }
+  .split-option-desc { font-size:12px; color:#888; line-height:1.4; }
+  .radio-dot { width:20px; height:20px; border-radius:50%; border:2px solid #ddd; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:12px; transition:all 0.15s; }
+  .radio-dot.active { background:#fd026a; border-color:#fd026a; }
 
   /* ── Form field styling (matches Nannimoon brand) ── */
   .field { flex: 1; min-width: 0; padding: 16px 0 0; }
@@ -181,18 +186,13 @@
   </div>
 
   <div class="preview" id="preview"></div>
-
-  <div class="prompt-area">
-    <div class="prompt-text" id="prompt-output"></div>
-    <button class="copy-btn" id="copy-btn" onclick="copyPrompt()">Copy</button>
-  </div>
 </div>
 
 <script>
 const DEFAULTS = { view:'mobile', flow:'new', step:1, sidebar:'itinerary', stripe:'payment', cta:'pill', splitPayment:true, urgencyBadge:true, trustBadges:true, microcopy:true, cancelPill:true, collapsibleRules:true, actionCta:true, guestFav:true, psyTitle:true, psySubtitle:true, psyWhatsapp:true, psyStripeTrust:true, psyCta:true, psyTerms:true, psySidebarOwnership:true, psyNannyReview:true, psyPlaceholders:true, psyCancelCopy:true, psySplitCopy:true, psyProcessing:true };
 const state = { ...DEFAULTS };
 
-function updateAll() { renderPreview(); updatePrompt(); updateBadges(); }
+function updateAll() { renderPreview(); updateBadges(); }
 
 function updateBadges() {
   document.getElementById('badge-phase').textContent = state.flow === 'current' ? 'Current v2' : 'v3.0';
@@ -780,6 +780,12 @@ function renderMobile() {
       content.appendChild(trip);
     } else {
       content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, 'Pay & confirm'));
+      if (state.splitPayment) {
+        const mobSplitDesc = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
+        const mobSplit = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'16px',overflow:'hidden',marginBottom:'20px'}});
+        mobSplit.append(buildRadio('Pay $272.61 now', mobSplitDesc, true), buildRadio('Pay $545.22 now', "Pay the total and you're all set.", false));
+        content.appendChild(mobSplit);
+      }
       content.appendChild(buildCardElement());
       content.lastChild.style.marginBottom = '16px';
       const trust = buildTrustBadges();
@@ -873,50 +879,6 @@ function renderMobile() {
 function renderPreview() {
   if (state.view === 'desktop') renderDesktop();
   else renderMobile();
-}
-
-function updatePrompt() {
-  const parts = ['Implement the Nannimoon Checkout 3.0 redesign with these specifications:'];
-  if (state.flow !== 'current') parts.push('\n\nSTEP ORDER: 2-step flow — Your Details (+ booking review) \u2192 Payment & Confirm.');
-  if (state.cta === 'pill') parts.push('\nCTA STYLE: All buttons use pill shape (rounded-full / border-radius: 100px) to match Nannimoon brand.');
-  if (state.sidebar === 'itinerary') parts.push('\nSIDEBAR: Redesign as premium itinerary with vertical timeline dots, connecting line, reactive hotel names.');
-  if (state.stripe === 'payment') parts.push('\nSTRIPE: Migrate from individual CardElements to unified PaymentElement (includes Apple Pay, Google Pay, Link). Requires PHP change to provide clientSecret.');
-  if (state.urgencyBadge) parts.push('\nURGENCY: Move badge to position 2 (below nanny card, above itinerary).');
-  if (state.cancelPill) parts.push('\nCANCELLATION: Show as green pill with "X days remaining" countdown.');
-  if (state.trustBadges) parts.push('\nTRUST: Add trust signal row (secure payment, free replacement, 24/7 support) in sidebar and payment step.');
-  if (state.microcopy) parts.push('\nMICROCOPY: Add "(optional)" to non-required fields. Add "For WhatsApp booking updates" below phone.');
-  parts.push('\nFIELD: Add editable "Number of Children" field in Your Details step (pre-populated from booking data, user can change).');
-  if (state.collapsibleRules) parts.push('\nRULES: Nanny rules as collapsible accordion (collapsed by default). Pool supervision keeps red warning card.');
-  if (state.actionCta) parts.push('\nCTA LABELS: "Continue to payment" \u2192 "Confirm & Reserve". Mobile final: "Pay $X \u2014 Reserve".');
-  if (state.guestFav) parts.push('\nBADGE: Add "Guest favorite" pill badge on nanny card when rating > 4.5.');
-  const psyEnabled = ['psyTitle','psySubtitle','psyWhatsapp','psyStripeTrust','psyCta','psyTerms','psySidebarOwnership','psyNannyReview','psyPlaceholders','psyCancelCopy','psySplitCopy','psyProcessing'].filter(k => state[k]);
-  if (psyEnabled.length > 0) {
-    parts.push('\n\nPSYCHOLOGY PHASE 1 MICRO-COPY:');
-    if (state.psyTitle) parts.push('\n- Page title: "Complete your booking" (endowment effect)');
-    if (state.psySubtitle) parts.push('\n- Subtitle: "Just 3 steps \u2014 takes about 2 minutes" (cognitive ease)');
-    if (state.psyWhatsapp) parts.push('\n- WhatsApp micro: "We\'ll send your nanny\'s intro and trip updates here" (value framing)');
-    if (state.psyPlaceholders) parts.push('\n- Smarter placeholders: "e.g., Banyan Tree Phuket", "e.g., \'My toddler naps at 1pm\'" (cognitive ease)');
-    if (state.psyStripeTrust) parts.push('\n- Stripe trust line below card: "Your card details are encrypted by Stripe. We never store your card number." (trust)');
-    if (state.psySplitCopy) parts.push('\n- Split pay: "No extra fees, no interest. Automatic charge." (trust + friction reduction)');
-    if (state.psyCta) parts.push('\n- Final CTA: "Secure Your Booking" (loss aversion + ownership)');
-    if (state.psyTerms) parts.push('\n- Terms: "Your payment is secure. I agree to..." (positive framing)');
-    if (state.psySidebarOwnership) parts.push('\n- Sidebar: "Your nanny: Laila" + "Your Trip" (endowment effect)');
-    if (state.psyNannyReview) parts.push('\n- Curated review quote below nanny card (social proof)');
-    if (state.psyCancelCopy) parts.push('\n- Cancel: "Change of plans? No penalty before..." (trust + reassurance)');
-    if (state.psyProcessing) parts.push('\n- Processing button: "Securing your booking..." (ownership language)');
-  }
-  parts.push('\n\nSee CHECKOUT_PSYCHOLOGY_RESEARCH.md for full research and rationale.');
-  document.getElementById('prompt-output').textContent = parts.join('');
-}
-
-function copyPrompt() {
-  const text = document.getElementById('prompt-output').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
-  });
 }
 
 updateAll();
