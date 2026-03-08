@@ -45,6 +45,11 @@
   .preset-btn .preset-desc { font-weight: 400; color: var(--text-dim); font-size: 10px; display: block; margin-top: 2px; }
   .preview { overflow-y: auto; padding: 32px; background: var(--bg); }
   .preview-container { max-width: 1000px; margin: 0 auto; }
+  .prompt-area { grid-column: 1 / -1; background: var(--surface); border-top: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: flex-start; gap: 16px; }
+  .prompt-text { flex: 1; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; max-height: 120px; overflow-y: auto; white-space: pre-wrap; }
+  .copy-btn { padding: 8px 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+  .copy-btn:hover { border-color: var(--brand); }
+  .copy-btn.copied { background: var(--brand); color: white; border-color: var(--brand); }
   .flow-diagram { display: flex; align-items: center; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
   .flow-step-box { padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 2px solid #e5e5e5; color: #333; background: white; text-align: center; min-width: 100px; }
   .flow-step-box.active { border-color: var(--brand); background: #fdf2f8; color: #fd026a; }
@@ -186,13 +191,18 @@
   </div>
 
   <div class="preview" id="preview"></div>
+
+  <div class="prompt-area">
+    <div class="prompt-text" id="prompt-output"></div>
+    <button class="copy-btn" id="copy-btn" onclick="copyPrompt()">Copy</button>
+  </div>
 </div>
 
 <script>
 const DEFAULTS = { view:'mobile', flow:'new', step:1, sidebar:'itinerary', stripe:'payment', cta:'pill', splitPayment:true, urgencyBadge:true, trustBadges:true, microcopy:true, cancelPill:true, collapsibleRules:true, actionCta:true, guestFav:true, psyTitle:true, psySubtitle:true, psyWhatsapp:true, psyStripeTrust:true, psyCta:true, psyTerms:true, psySidebarOwnership:true, psyNannyReview:true, psyPlaceholders:true, psyCancelCopy:true, psySplitCopy:true, psyProcessing:true };
 const state = { ...DEFAULTS };
 
-function updateAll() { renderPreview(); updateBadges(); }
+function updateAll() { renderPreview(); updatePrompt(); updateBadges(); }
 
 function updateBadges() {
   document.getElementById('badge-phase').textContent = state.flow === 'current' ? 'Current v2' : 'v3.0';
@@ -437,7 +447,7 @@ function buildStepContent(stepName) {
   const br = state.cta==='pill' ? '100px' : '12px';
   const wrap = el('div', {style:{marginTop:'16px'}});
 
-  if (stepName === 'Your details') {
+  if (stepName === 'Your Details' || stepName === 'Your details') {
     const row1 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
     row1.append(buildField('First Name','','Adam'), buildField('Last Name','Required','Oliver'));
     wrap.appendChild(row1);
@@ -512,7 +522,7 @@ function buildStepContent(stepName) {
       row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
       summary.appendChild(row);
     });
-    summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onClick:()=>setStep(1)}, 'Edit details'));
+    summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onclick:()=>setStep(1)}, 'Edit details'));
     wrap.appendChild(summary);
 
     // Rules
@@ -592,7 +602,7 @@ function buildStepContent(stepName) {
     }
   }
 
-  else if (stepName === 'Confirm & reserve') {
+  else if (stepName === 'Confirm & Reserve' || stepName === 'Confirm & reserve') {
     // Legacy — kept for current flow compatibility
     return buildStepContent('Payment & Confirm');
   }
@@ -608,7 +618,7 @@ function buildStepContent(stepName) {
 
   else if (stepName === 'Review your request') {
     wrap.appendChild(document.createTextNode(''));
-    return buildStepContent('Your details');
+    return buildStepContent('Your Details');
   }
 
   return wrap;
@@ -651,7 +661,7 @@ function renderDesktop() {
     h3.appendChild(el('span', {style:{color:'#fd026a',marginRight:'4px'}}, (i+1)+'.'));
     h3.appendChild(document.createTextNode(' '+step));
     hdr.appendChild(h3);
-    if (isDone) hdr.appendChild(el('button', {style:{fontSize:'12px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',background:'none',border:'none'},onClick:()=>setStep(i+1)}, 'Edit'));
+    if (isDone) hdr.appendChild(el('button', {style:{fontSize:'12px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',background:'none',border:'none'},onclick:()=>setStep(i+1)}, 'Edit'));
     item.appendChild(hdr);
     if (isActive) item.appendChild(buildStepContent(step));
     stepsCol.appendChild(item);
@@ -694,7 +704,7 @@ function renderMobile() {
   const header = el('div', {style:{padding:'16px 20px 12px',borderBottom:'1px solid #f0f0f0',background:'white',position:'sticky',top:'0',zIndex:'10'}});
   const nav = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}});
   if (state.flow==='new' && page===1) { nav.appendChild(el('div', {style:{width:'32px',height:'32px'}})); }
-  else { nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'},onClick:()=>{if(state.step>1)setStep(state.step-1)}}, '\u2190')); }
+  else { nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'},onclick:()=>{if(state.step>1)setStep(state.step-1)}}, '\u2190')); }
   nav.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111'}}, pages[page-1]));
   nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'}}, '\u2715'));
   header.appendChild(nav);
@@ -818,7 +828,7 @@ function renderMobile() {
         row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
         summary.appendChild(row);
       });
-      summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onClick:()=>setStep(1)}, 'Edit details'));
+      summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onclick:()=>setStep(1)}, 'Edit details'));
       content.appendChild(summary);
       // Cancel tiers
       const tiers = el('div', {style:{marginBottom:'16px'}});
@@ -868,7 +878,7 @@ function renderMobile() {
   }
   const maxSteps = state.flow==='new' ? 2 : 3;
   const ctaLabels = state.flow==='new' ? ['Continue to payment', state.psyCta?'Secure Your Booking':'Confirm and pay'] : ['Next','Continue','Confirm & Reserve'];
-  const cta = el('button', {style:{flex:'1',padding:'14px',border:'none',borderRadius:state.cta==='pill'?'100px':'12px',fontSize:'14px',fontWeight:'700',color:'white',background:'#fd026a',cursor:'pointer',textAlign:'center'},onClick:()=>{if(state.step<maxSteps)setStep(state.step+1)}}, ctaLabels[page-1]);
+  const cta = el('button', {style:{flex:'1',padding:'14px',border:'none',borderRadius:state.cta==='pill'?'100px':'12px',fontSize:'14px',fontWeight:'700',color:'white',background:'#fd026a',cursor:'pointer',textAlign:'center'},onclick:()=>{if(state.step<maxSteps)setStep(state.step+1)}}, ctaLabels[page-1]);
   bar.appendChild(cta);
   mock.appendChild(bar);
 
@@ -879,6 +889,50 @@ function renderMobile() {
 function renderPreview() {
   if (state.view === 'desktop') renderDesktop();
   else renderMobile();
+}
+
+function updatePrompt() {
+  const parts = ['Implement the Nannimoon Checkout 3.0 redesign with these specifications:'];
+  if (state.flow !== 'current') parts.push('\n\nSTEP ORDER: 2-step flow — Your Details (+ booking review) \u2192 Payment & Confirm.');
+  if (state.cta === 'pill') parts.push('\nCTA STYLE: All buttons use pill shape (rounded-full / border-radius: 100px) to match Nannimoon brand.');
+  if (state.sidebar === 'itinerary') parts.push('\nSIDEBAR: Redesign as premium itinerary with vertical timeline dots, connecting line, reactive hotel names.');
+  if (state.stripe === 'payment') parts.push('\nSTRIPE: Migrate from individual CardElements to unified PaymentElement (includes Apple Pay, Google Pay, Link). Requires PHP change to provide clientSecret.');
+  if (state.urgencyBadge) parts.push('\nURGENCY: Move badge to position 2 (below nanny card, above itinerary).');
+  if (state.cancelPill) parts.push('\nCANCELLATION: Show as green pill with "X days remaining" countdown.');
+  if (state.trustBadges) parts.push('\nTRUST: Add trust signal row (secure payment, free replacement, 24/7 support) in sidebar and payment step.');
+  if (state.microcopy) parts.push('\nMICROCOPY: Add "(optional)" to non-required fields. Add "For WhatsApp booking updates" below phone.');
+  parts.push('\nFIELD: Add editable "Number of Children" field in Your Details step (pre-populated from booking data, user can change).');
+  if (state.collapsibleRules) parts.push('\nRULES: Nanny rules as collapsible accordion (collapsed by default). Pool supervision keeps red warning card.');
+  if (state.actionCta) parts.push('\nCTA LABELS: "Continue to payment" \u2192 "Confirm & Reserve". Mobile final: "Pay $X \u2014 Reserve".');
+  if (state.guestFav) parts.push('\nBADGE: Add "Guest favorite" pill badge on nanny card when rating > 4.5.');
+  const psyEnabled = ['psyTitle','psySubtitle','psyWhatsapp','psyStripeTrust','psyCta','psyTerms','psySidebarOwnership','psyNannyReview','psyPlaceholders','psyCancelCopy','psySplitCopy','psyProcessing'].filter(k => state[k]);
+  if (psyEnabled.length > 0) {
+    parts.push('\n\nPSYCHOLOGY PHASE 1 MICRO-COPY:');
+    if (state.psyTitle) parts.push('\n- Page title: "Complete your booking" (endowment effect)');
+    if (state.psySubtitle) parts.push('\n- Subtitle: "Just 3 steps \u2014 takes about 2 minutes" (cognitive ease)');
+    if (state.psyWhatsapp) parts.push('\n- WhatsApp micro: "We\'ll send your nanny\'s intro and trip updates here" (value framing)');
+    if (state.psyPlaceholders) parts.push('\n- Smarter placeholders: "e.g., Banyan Tree Phuket", "e.g., \'My toddler naps at 1pm\'" (cognitive ease)');
+    if (state.psyStripeTrust) parts.push('\n- Stripe trust line below card: "Your card details are encrypted by Stripe. We never store your card number." (trust)');
+    if (state.psySplitCopy) parts.push('\n- Split pay: "No extra fees, no interest. Automatic charge." (trust + friction reduction)');
+    if (state.psyCta) parts.push('\n- Final CTA: "Secure Your Booking" (loss aversion + ownership)');
+    if (state.psyTerms) parts.push('\n- Terms: "Your payment is secure. I agree to..." (positive framing)');
+    if (state.psySidebarOwnership) parts.push('\n- Sidebar: "Your nanny: Laila" + "Your Trip" (endowment effect)');
+    if (state.psyNannyReview) parts.push('\n- Curated review quote below nanny card (social proof)');
+    if (state.psyCancelCopy) parts.push('\n- Cancel: "Change of plans? No penalty before..." (trust + reassurance)');
+    if (state.psyProcessing) parts.push('\n- Processing button: "Securing your booking..." (ownership language)');
+  }
+  parts.push('\n\nSee CHECKOUT_PSYCHOLOGY_RESEARCH.md for full research and rationale.');
+  document.getElementById('prompt-output').textContent = parts.join('');
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
 }
 
 updateAll();
