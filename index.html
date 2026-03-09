@@ -113,7 +113,6 @@
   <div class="controls">
     <div class="control-group">
       <div class="control-group-title">Quick Start</div>
-      <button class="preset-btn" onclick="applyPreset('current')">Current (v2.0)<span class="preset-desc">Payment Choice > Card > Review</span></button>
       <button class="preset-btn" onclick="applyPreset('recommended')">Recommended (v3.0)<span class="preset-desc">Details > Payment & Confirm, pills, timeline</span></button>
       <button class="preset-btn" onclick="applyPreset('premium')">Premium Max<span class="preset-desc">+ PaymentElement, all features</span></button>
     </div>
@@ -125,24 +124,11 @@
       </div>
     </div>
     <div class="control-group">
-      <div class="control-group-title">Checkout Flow</div>
-      <div class="toggle-group">
-        <button class="toggle-btn" onclick="setFlow('current')" id="flow-current">Current</button>
-        <button class="toggle-btn active" onclick="setFlow('new')" id="flow-new">New (Recommended)</button>
-      </div>
-    </div>
-    <div class="control-group">
       <div class="control-group-title">Show Step</div>
       <div class="toggle-group" id="step-toggles">
         <button class="toggle-btn active" onclick="setStep(1)" id="step-1">1</button>
         <button class="toggle-btn" onclick="setStep(2)" id="step-2">2</button>
-      </div>
-    </div>
-    <div class="control-group">
-      <div class="control-group-title">Trip Summary Style</div>
-      <div class="toggle-group">
-        <button class="toggle-btn" onclick="setSidebar('receipt')" id="sidebar-receipt">Receipt</button>
-        <button class="toggle-btn active" onclick="setSidebar('itinerary')" id="sidebar-itinerary">Itinerary</button>
+        <button class="toggle-btn" onclick="setStep(3)" id="step-3">3</button>
       </div>
     </div>
     <div class="control-group">
@@ -210,9 +196,9 @@ function updateBadges() {
 }
 
 function setView(v) { state.view = v; document.getElementById('view-desktop').className = 'toggle-btn' + (v==='desktop'?' active':''); document.getElementById('view-mobile').className = 'toggle-btn' + (v==='mobile'?' active':''); updateAll(); }
-function setFlow(f) { state.flow = f; document.getElementById('flow-current').className = 'toggle-btn' + (f==='current'?' active':''); document.getElementById('flow-new').className = 'toggle-btn' + (f==='new'?' active':''); updateAll(); }
-function setStep(s) { if (state.flow==='new' && s > 2) s = 2; state.step = s; [1,2,3].forEach(i => { const el = document.getElementById('step-'+i); if (el) el.className = 'toggle-btn' + (i===s?' active':''); }); updateAll(); }
-function setSidebar(s) { state.sidebar = s; document.getElementById('sidebar-receipt').className = 'toggle-btn' + (s==='receipt'?' active':''); document.getElementById('sidebar-itinerary').className = 'toggle-btn' + (s==='itinerary'?' active':''); updateAll(); }
+function setFlow(f) { state.flow = f; updateAll(); }
+function setStep(s) { if (state.flow==='new' && s > 3) s = 3; state.step = s; [1,2,3].forEach(i => { const el = document.getElementById('step-'+i); if (el) el.className = 'toggle-btn' + (i===s?' active':''); }); updateAll(); }
+function setSidebar(s) { state.sidebar = s; updateAll(); }
 function setStripe(s) { state.stripe = s; document.getElementById('stripe-card').className = 'toggle-btn' + (s==='card'?' active':''); document.getElementById('stripe-payment').className = 'toggle-btn' + (s==='payment'?' active':''); updateAll(); }
 function setCta(c) { state.cta = c; document.getElementById('cta-rounded').className = 'toggle-btn' + (c==='rounded'?' active':''); document.getElementById('cta-pill').className = 'toggle-btn' + (c==='pill'?' active':''); updateAll(); }
 function toggleFeature(f, v) { state[f] = v; updateAll(); }
@@ -226,10 +212,6 @@ function applyPreset(name) {
 }
 
 function syncControls() {
-  document.getElementById('flow-current').className = 'toggle-btn' + (state.flow==='current'?' active':'');
-  document.getElementById('flow-new').className = 'toggle-btn' + (state.flow==='new'?' active':'');
-  document.getElementById('sidebar-receipt').className = 'toggle-btn' + (state.sidebar==='receipt'?' active':'');
-  document.getElementById('sidebar-itinerary').className = 'toggle-btn' + (state.sidebar==='itinerary'?' active':'');
   document.getElementById('stripe-card').className = 'toggle-btn' + (state.stripe==='card'?' active':'');
   document.getElementById('stripe-payment').className = 'toggle-btn' + (state.stripe==='payment'?' active':'');
   document.getElementById('cta-rounded').className = 'toggle-btn' + (state.cta==='rounded'?' active':'');
@@ -248,7 +230,7 @@ function syncControls() {
 
 function getSteps() {
   if (state.flow==='current') return state.splitPayment ? ['Choose when to pay','Add a payment method','Review your request'] : ['Add a payment method','Review your request'];
-  return ['Your Details','Payment & Confirm'];
+  return ['Review your booking', 'Payment Method', 'Complete Booking'];
 }
 
 function el(tag, attrs, children) {
@@ -522,7 +504,7 @@ function buildStepContent(stepName) {
       row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
       summary.appendChild(row);
     });
-    summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onclick:()=>setStep(1)}, 'Edit details'));
+    summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onClick:()=>setStep(1)}, 'Edit details'));
     wrap.appendChild(summary);
 
     // Rules
@@ -602,7 +584,7 @@ function buildStepContent(stepName) {
     }
   }
 
-  else if (stepName === 'Confirm & Reserve' || stepName === 'Confirm & reserve') {
+  else if (stepName === 'Confirm & reserve') {
     // Legacy — kept for current flow compatibility
     return buildStepContent('Payment & Confirm');
   }
@@ -618,7 +600,165 @@ function buildStepContent(stepName) {
 
   else if (stepName === 'Review your request') {
     wrap.appendChild(document.createTextNode(''));
-    return buildStepContent('Your Details');
+    return buildStepContent('Your details');
+  }
+
+  else if (stepName === 'Review your booking') {
+    if (state.splitPayment) {
+      const splitDesc = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
+      const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:state.cta==='pill'?'16px':'12px',overflow:'hidden',marginBottom:'20px'}});
+      split.append(buildRadio('Pay $272.61 now', splitDesc, true), buildRadio('Pay $545.22 now',"Pay the total and you're all set.",false));
+      wrap.appendChild(split);
+    }
+    const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'16px'}});
+    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, 'Continue to payment'));
+    wrap.appendChild(btnWrap);
+  }
+
+  else if (stepName === 'Payment Method') {
+    wrap.appendChild(buildCardElement());
+    const trust = buildTrustBadges();
+    if (trust) wrap.appendChild(trust);
+    const notCharged = el('div', {style:{display:'flex',alignItems:'center',gap:'8px',marginTop:'20px',marginBottom:'4px',padding:'10px 14px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'10px',fontSize:'12px',color:'#15803d',fontWeight:'500'}});
+    notCharged.appendChild(el('span', {style:{fontSize:'15px'}}, '\uD83D\uDD12'));
+    notCharged.appendChild(document.createTextNode("You won't be charged yet — review your booking and confirm on the next step."));
+    wrap.appendChild(notCharged);
+    const btnWrap2 = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'12px'}});
+    btnWrap2.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, 'Continue'));
+    wrap.appendChild(btnWrap2);
+  }
+
+  else if (stepName === 'Complete Booking') {
+    // Personal details form
+    wrap.appendChild(el('div', {style:{fontSize:'15px',fontWeight:'700',color:'#333',marginBottom:'14px'}}, 'Your details'));
+    const row1d = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    row1d.append(buildField('First Name','','Adam'), buildField('Last Name','Required','Oliver'));
+    wrap.appendChild(row1d);
+    const row2d = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    const whatsappMicrod = state.psyWhatsapp ? "We'll send your nanny's intro and trip updates here" : 'For WhatsApp booking updates';
+    const emailMicrod = state.psyWhatsapp ? "We'll send your booking confirmation here" : null;
+    row2d.append(buildField('Email','','adam@email.com', emailMicrod), buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', whatsappMicrod));
+    wrap.appendChild(row2d);
+    const row3d = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    row3d.append(buildField(state.psyPlaceholders?'How many children?':'Number of Children','','2'));
+    wrap.appendChild(row3d);
+    const row4d = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+    row4d.append(buildField('Phuket Hotel / Villa', state.psyPlaceholders?'e.g., Banyan Tree Phuket':'Where are you staying?','',null,true), buildField('Krabi Hotel / Villa', state.psyPlaceholders?'e.g., Rayavadee Krabi':'Where are you staying?','',null,true));
+    wrap.appendChild(row4d);
+    wrap.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm' or 'nut allergy'":'Allergies, special needs, etc.','',null,true));
+    wrap.lastChild.style.marginBottom = '24px';
+
+    // Booking summary — designed with clear visual hierarchy
+    const summary3 = el('div', {style:{border:'1px solid #e8e8e8',borderRadius:'16px',overflow:'hidden',marginBottom:'20px'}});
+
+    // Nanny header row
+    const nannyHdr = el('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'16px',background:'#fafafa',borderBottom:'1px solid #f0f0f0'}});
+    nannyHdr.appendChild(el('div', {style:{width:'44px',height:'44px',borderRadius:'10px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
+    const nannyHdrTxt = el('div');
+    nannyHdrTxt.appendChild(el('div', {style:{fontSize:'15px',fontWeight:'800',color:'#111',lineHeight:'1.2'}}, 'Laila'));
+    nannyHdrTxt.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, '\u2605 4.9 \u00b7 4 days \u00b7 Phuket + Krabi'));
+    nannyHdr.appendChild(nannyHdrTxt);
+    summary3.appendChild(nannyHdr);
+
+    // Trip dates section
+    const tripSect = el('div', {style:{padding:'14px 16px',borderBottom:'1px solid #f0f0f0'}});
+    tripSect.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'8px'}}, 'Trip Dates'));
+    [['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28']].forEach(([dest,dates]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',padding:'3px 0'}});
+      row.append(el('span', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, dest), el('span', {style:{fontSize:'12px',color:'#888'}}, dates));
+      tripSect.appendChild(row);
+    });
+    summary3.appendChild(tripSect);
+
+    // Price section
+    const priceSect = el('div', {style:{padding:'14px 16px',borderBottom:'1px solid #f0f0f0'}});
+    priceSect.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'8px'}}, 'Price'));
+    [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',padding:'3px 0'}});
+      row.append(el('span', {style:{fontSize:'12px',color:'#888'}}, l), el('span', {style:{fontSize:'12px',color:'#555',fontWeight:'500'}}, v));
+      priceSect.appendChild(row);
+    });
+    const totalRow3 = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginTop:'10px',paddingTop:'10px',borderTop:'1px solid #ebebeb'}});
+    totalRow3.append(el('span', {style:{fontSize:'13px',fontWeight:'700',color:'#111'}}, 'Total (USD)'), el('span', {style:{fontSize:'18px',fontWeight:'800',color:'#111'}}, '$545.22'));
+    priceSect.appendChild(totalRow3);
+    summary3.appendChild(priceSect);
+
+    // Guest details section
+    const guestSect = el('div', {style:{padding:'14px 16px'}});
+    guestSect.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'8px'}}, 'Guest Details'));
+    [['Name','Adam Oliver'],['Email','adam@email.com'],['WhatsApp','+1 555 000-0000'],['Children','2'],['Phuket hotel','Hotel Paradise']].forEach(([l,v]) => {
+      const row = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',padding:'3px 0'}});
+      row.append(el('span', {style:{fontSize:'11px',color:'#aaa',fontWeight:'500'}}, l), el('span', {style:{fontSize:'12px',color:'#333',fontWeight:'600'}}, v));
+      guestSect.appendChild(row);
+    });
+    summary3.appendChild(guestSect);
+
+    wrap.appendChild(summary3);
+
+    if (state.collapsibleRules) {
+      const rules3 = el('div', {style:{border:'1px solid #f0f0f0',borderRadius:'12px',overflow:'hidden',marginBottom:'16px'}});
+      const hdr3 = el('div', {style:{padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontSize:'14px',fontWeight:'600',color:'#333',background:'#fafafa'}});
+      hdr3.appendChild(document.createTextNode('House rules for your booking'));
+      const chev3 = el('span', {style:{fontSize:'12px',color:'#aaa',transition:'transform 0.2s'}}, '\u25BC');
+      hdr3.appendChild(chev3);
+      const body3 = el('div', {style:{padding:'0 16px',maxHeight:'0',overflow:'hidden',transition:'all 0.3s'}});
+      body3.appendChild(el('div', {style:{paddingTop:'16px',paddingBottom:'16px'}}));
+      hdr3.addEventListener('click', () => {
+        if (body3.style.maxHeight === '0px' || body3.style.maxHeight === '0') { body3.style.maxHeight = '300px'; body3.style.padding = '16px'; chev3.style.transform = 'rotate(180deg)'; }
+        else { body3.style.maxHeight = '0'; body3.style.padding = '0 16px'; chev3.style.transform = ''; }
+      });
+      const poolWarn3 = el('div', {style:{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:'10px',padding:'12px',marginBottom:'10px',fontSize:'11px',color:'#991b1b'}});
+      poolWarn3.appendChild(el('strong', null, '\u26A0 Pool Supervision: '));
+      poolWarn3.appendChild(document.createTextNode('Nannies supervise children at the pool only when a parent is present.'));
+      body3.firstChild.appendChild(poolWarn3);
+      [['\uD83C\uDF7D\uFE0F','Invite to family meals or provide 200 THB per meal.'],['\uD83D\uDC65','Strictly for one family only. Shared services not permitted.']].forEach(([icon,text]) => {
+        const item = el('div', {style:{fontSize:'12px',color:'#666',padding:'6px 0',display:'flex',alignItems:'flex-start',gap:'8px'}});
+        item.append(el('span', {style:{fontSize:'14px',flexShrink:'0'}}, icon), el('span', null, text));
+        body3.firstChild.appendChild(item);
+      });
+      rules3.append(hdr3, body3);
+      wrap.appendChild(rules3);
+    }
+
+    const tiers3 = el('div', {style:{marginBottom:'16px'}});
+    tiers3.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Cancellation Policy'));
+    [['#22c55e','Free cancellation (net of 5% processing fees)'],['#f59e0b','Partial refund (80%)'],['#ef4444','No refund']].forEach(([color,text]) => {
+      const tier = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'8px',padding:'4px 0',fontSize:'12px',color:'#666'}});
+      tier.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:color,marginTop:'4px',flexShrink:'0'}}));
+      tier.appendChild(el('span', null, text));
+      tiers3.appendChild(tier);
+    });
+    const trial3 = el('div', {style:{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',padding:'10px 12px',fontSize:'11px',color:'#1e40af',marginTop:'8px',display:'flex',alignItems:'flex-start',gap:'8px'}});
+    trial3.append(el('span', null, '\u267B'), el('span', null, '72-hour trial period: If there\'s no connection, we replace her at no cost or issue a refund.'));
+    tiers3.appendChild(trial3);
+    wrap.appendChild(tiers3);
+
+    const terms3 = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px',marginTop:'16px'}});
+    const check3 = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
+    check3.checked = true;
+    const termsTxt3 = el('div', {style:{fontSize:'11px',color:'#888',lineHeight:'1.5'}});
+    if (state.psyTerms) {
+      termsTxt3.appendChild(document.createTextNode('Your payment is secure. I agree to the '));
+      termsTxt3.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Cancellation Policy'));
+      termsTxt3.appendChild(document.createTextNode(' and '));
+      termsTxt3.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Terms of Service'));
+      termsTxt3.appendChild(document.createTextNode('.'));
+    } else {
+      termsTxt3.appendChild(document.createTextNode('By selecting below, I agree to the '));
+      termsTxt3.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Cancellation Policy'));
+      termsTxt3.appendChild(document.createTextNode(' and '));
+      termsTxt3.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline',cursor:'pointer'}}, 'Terms of Service'));
+      termsTxt3.appendChild(document.createTextNode('. I authorize Nannimoon to charge my payment method.'));
+    }
+    terms3.append(check3, termsTxt3);
+    wrap.appendChild(terms3);
+
+    const ctaText3 = state.psyCta ? 'Secure Your Booking' : 'Confirm & Reserve';
+    const ctaBtn3 = el('button', {style:{width:'100%',marginTop:'20px',padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#fd026a',borderRadius:br}}, ctaText3);
+    wrap.appendChild(ctaBtn3);
+    if (state.psySubtitle) {
+      wrap.appendChild(el('div', {style:{textAlign:'center',fontSize:'11px',color:'#999',marginTop:'8px'}}, 'Your 4-day trip with Laila is ready to confirm.'));
+    }
   }
 
   return wrap;
@@ -661,7 +801,7 @@ function renderDesktop() {
     h3.appendChild(el('span', {style:{color:'#fd026a',marginRight:'4px'}}, (i+1)+'.'));
     h3.appendChild(document.createTextNode(' '+step));
     hdr.appendChild(h3);
-    if (isDone) hdr.appendChild(el('button', {style:{fontSize:'12px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',background:'none',border:'none'},onclick:()=>setStep(i+1)}, 'Edit'));
+    if (isDone) hdr.appendChild(el('button', {style:{fontSize:'12px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',background:'none',border:'none'},onClick:()=>setStep(i+1)}, 'Edit'));
     item.appendChild(hdr);
     if (isActive) item.appendChild(buildStepContent(step));
     stepsCol.appendChild(item);
@@ -683,7 +823,7 @@ function renderMobile() {
   preview.replaceChildren();
   const container = el('div', {style:{maxWidth:'400px',margin:'0 auto'}});
 
-  const pages = state.flow==='new' ? ['Your Details','Payment & Confirm'] : ['Review and Pay','Payment Method','Guest Details'];
+  const pages = state.flow==='new' ? ['Review your booking','Payment Method','Complete Booking'] : ['Review and Pay','Payment Method','Guest Details'];
   const page = state.step;
 
   // Label
@@ -704,12 +844,12 @@ function renderMobile() {
   const header = el('div', {style:{padding:'16px 20px 12px',borderBottom:'1px solid #f0f0f0',background:'white',position:'sticky',top:'0',zIndex:'10'}});
   const nav = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}});
   if (state.flow==='new' && page===1) { nav.appendChild(el('div', {style:{width:'32px',height:'32px'}})); }
-  else { nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'},onclick:()=>{if(state.step>1)setStep(state.step-1)}}, '\u2190')); }
+  else { nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'},onClick:()=>{if(state.step>1)setStep(state.step-1)}}, '\u2190')); }
   nav.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111'}}, pages[page-1]));
   nav.appendChild(el('button', {style:{width:'32px',height:'32px',borderRadius:'50%',border:'none',background:'transparent',fontSize:'18px',cursor:'pointer',color:'#333'}}, '\u2715'));
   header.appendChild(nav);
   const progress = el('div', {style:{display:'flex',gap:'4px',height:'4px'}});
-  const numSegments = state.flow==='new' ? 2 : 3;
+  const numSegments = 3;
   for (let s = 1; s <= numSegments; s++) progress.appendChild(el('div', {style:{flex:'1',borderRadius:'100px',background:s<=page?'#fd026a':'#e5e5e5',transition:'background 0.3s'}}));
   header.appendChild(progress);
   mock.appendChild(header);
@@ -719,14 +859,94 @@ function renderMobile() {
 
   if (state.flow === 'new') {
     if (page === 1) {
-      // Your Details form first
-      const mobileTitle = state.psyTitle ? 'Complete your booking' : 'Your details';
-      const titleEl = el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom: state.psySubtitle?'4px':'20px'}}, mobileTitle);
-      content.appendChild(titleEl);
-      if (state.psySubtitle) content.appendChild(el('div', {style:{fontSize:'12px',color:'#999',marginBottom:'20px'}}, 'Just 2 steps \u2014 takes about 2 minutes'));
-      const row1 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
-      row1.append(buildField('First Name','','Adam'), buildField('Last Name','Required','Oliver'));
-      content.appendChild(row1);
+      // Page 1: Review & Pay
+      const mobileTitle = 'Review your booking';
+      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:state.psySubtitle?'4px':'20px'}}, mobileTitle));
+      if (state.psySubtitle) content.appendChild(el('div', {style:{fontSize:'12px',color:'#999',marginBottom:'20px'}}, 'Just 3 steps \u2014 takes about 2 minutes'));
+      // Nanny card
+      const nanny1 = el('div', {style:{display:'flex',gap:'12px',marginBottom:'16px'}});
+      nanny1.appendChild(el('div', {style:{width:'64px',height:'64px',borderRadius:'12px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
+      const info1 = el('div');
+      if (state.psySidebarOwnership) {
+        info1.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Your nanny: Laila'));
+        info1.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, 'Professional childcare for your family'));
+      } else {
+        info1.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Professional Care with Laila'));
+      }
+      const rat1 = el('div', {style:{fontSize:'11px',color:'#888'}});
+      rat1.appendChild(el('span', {style:{color:'#fd026a'}}, '\u2605 '));
+      rat1.appendChild(document.createTextNode('4.9 (42 reviews)'));
+      info1.appendChild(rat1);
+      if (state.guestFav) info1.appendChild(el('div', {style:{display:'inline-block',fontSize:'9px',fontWeight:'700',background:'#fce4ec',color:'#fd026a',padding:'2px 8px',borderRadius:'100px',marginTop:'4px'}}, 'Guest favorite'));
+      nanny1.appendChild(info1);
+      content.appendChild(nanny1);
+      if (state.psyNannyReview) {
+        const mobReview = el('div', {style:{background:'#fafafa',borderRadius:'10px',padding:'10px 12px',marginBottom:'16px',borderLeft:'3px solid #fd026a'}});
+        mobReview.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontStyle:'italic',lineHeight:'1.5'}}, '"Laila was incredible with our 2-year-old. She felt like family."'));
+        mobReview.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'4px',fontWeight:'600'}}, '\u2014 Sarah T., London'));
+        content.appendChild(mobReview);
+      }
+      if (state.urgencyBadge) {
+        const urg1 = el('div', {style:{background:'#fdf2f8',border:'1px solid #fce4ec',borderRadius:'12px',padding:'12px',display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}});
+        urg1.appendChild(el('div', {style:{width:'28px',height:'28px',borderRadius:'50%',background:'#fd026a',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',flexShrink:'0'}}, '\u2605'));
+        urg1.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontWeight:'500'}}, 'Rare find! Laila is usually booked for these dates.'));
+        content.appendChild(urg1);
+      }
+      // Trip timeline
+      const trip1 = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',border:'1px solid #e5e5e5',marginBottom:'16px'}});
+      trip1.appendChild(el('div', {style:{fontSize:'10px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'10px'}}, state.psySidebarOwnership?'Your Trip':'Trip Itinerary'));
+      const tl1 = el('div', {style:{position:'relative',paddingLeft:'20px'}});
+      tl1.appendChild(el('div', {style:{position:'absolute',left:'5px',top:'8px',bottom:'8px',width:'2px',background:'#e5e5e5'}}));
+      [['Phuket','Feb 25 \u2013 Feb 27','Hotel Paradise'],['Krabi','Feb 27 \u2013 Feb 28','Villa Sunset']].forEach(([d,dt,hotel],i) => {
+        const item = el('div', {style:{position:'relative',paddingBottom:i===0?'14px':'0'}});
+        item.appendChild(el('div', {style:{position:'absolute',left:'-20px',top:'4px',width:'12px',height:'12px',borderRadius:'50%',background:'white',border:'3px solid #fd026a'}}));
+        item.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, d));
+        item.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, dt));
+        item.appendChild(el('div', {style:{fontSize:'10px',color:'#fd026a',marginTop:'2px',fontStyle:'italic'}}, hotel));
+        tl1.appendChild(item);
+      });
+      trip1.appendChild(tl1);
+      // Price breakdown
+      const priceDiv1 = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'12px',paddingTop:'12px'}});
+      [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'#666',padding:'4px 0'}});
+        row.append(el('span', null, l), el('span', null, v));
+        priceDiv1.appendChild(row);
+      });
+      const total1 = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'14px',fontWeight:'700',color:'#111',paddingTop:'8px',marginTop:'4px',borderTop:'1px solid #f0f0f0'}});
+      total1.append(el('span', null, 'Total (USD)'), el('span', null, '$545.22'));
+      priceDiv1.appendChild(total1);
+      if (state.cancelPill) {
+        priceDiv1.appendChild(el('div', {style:{display:'inline-flex',alignItems:'center',gap:'6px',background:'#dcfce7',color:'#166534',fontSize:'11px',fontWeight:'600',padding:'5px 12px',borderRadius:'100px',marginTop:'8px'}}, '\u2713 Free cancellation \u2014 12 days remaining'));
+      }
+      trip1.appendChild(priceDiv1);
+      content.appendChild(trip1);
+      // Split payment
+      if (state.splitPayment) {
+        const mobSplitDesc1 = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
+        const mobSplit1 = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'16px',overflow:'hidden',marginBottom:'8px'}});
+        mobSplit1.append(buildRadio('Pay $272.61 now', mobSplitDesc1, true), buildRadio('Pay $545.22 now', "Pay the total and you're all set.", false));
+        content.appendChild(mobSplit1);
+      }
+    } else if (page === 2) {
+      // Page 2: Payment Method
+      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, 'Payment method'));
+      content.appendChild(buildCardElement());
+      content.lastChild.style.marginBottom = '16px';
+      const trust2 = buildTrustBadges();
+      if (trust2) { trust2.style.marginBottom = '16px'; content.appendChild(trust2); }
+      const notChargedM = el('div', {style:{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'10px',fontSize:'12px',color:'#15803d',fontWeight:'500'}});
+      notChargedM.appendChild(el('span', {style:{fontSize:'15px'}}, '\uD83D\uDD12'));
+      notChargedM.appendChild(document.createTextNode("You won't be charged yet — confirm on the next step."));
+      content.appendChild(notChargedM);
+    } else {
+      // Page 3: Complete Booking
+      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, state.psyTitle?'Complete your booking':'Confirm your booking'));
+      // Personal details form
+      content.appendChild(el('div', {style:{fontSize:'15px',fontWeight:'700',color:'#333',marginBottom:'14px'}}, 'Your details'));
+      const row1m = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+      row1m.append(buildField('First Name','','Adam'), buildField('Last Name','Required','Oliver'));
+      content.appendChild(row1m);
       content.appendChild(buildField('Email','','adam@email.com', state.psyWhatsapp?"We'll send your booking confirmation here":null));
       content.lastChild.style.marginBottom = '16px';
       content.appendChild(buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', state.psyWhatsapp?"We'll send your nanny's intro and trip updates here":'For WhatsApp booking updates'));
@@ -736,129 +956,77 @@ function renderMobile() {
       content.appendChild(buildField('Phuket Hotel / Villa', state.psyPlaceholders?'e.g., Banyan Tree Phuket':'Where are you staying?','',null,true));
       content.lastChild.style.marginBottom = '16px';
       content.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm'":'Allergies, special needs...','',null,true));
-
-      // Review your booking below
-      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px',marginTop:'32px'}}, 'Review your booking'));
-      // Nanny card
-      const nanny = el('div', {style:{display:'flex',gap:'12px',marginBottom:'16px'}});
-      nanny.appendChild(el('div', {style:{width:'64px',height:'64px',borderRadius:'12px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
-      const info = el('div');
-      if (state.psySidebarOwnership) {
-        info.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Your nanny: Laila'));
-        info.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, 'Professional childcare for your family'));
-      } else {
-        info.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Professional Care with Laila'));
-      }
-      const rat = el('div', {style:{fontSize:'11px',color:'#888'}});
-      rat.appendChild(el('span', {style:{color:'#fd026a'}}, '\u2605 '));
-      rat.appendChild(document.createTextNode('4.9 \u00B7 Guest favorite'));
-      info.appendChild(rat);
-      nanny.appendChild(info);
-      content.appendChild(nanny);
-      if (state.psyNannyReview) {
-        const mobReview = el('div', {style:{background:'#fafafa',borderRadius:'10px',padding:'10px 12px',marginBottom:'16px',borderLeft:'3px solid #fd026a'}});
-        mobReview.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontStyle:'italic',lineHeight:'1.5'}}, '"Laila was incredible with our 2-year-old. She felt like family."'));
-        mobReview.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'4px',fontWeight:'600'}}, '\u2014 Sarah T., London'));
-        content.appendChild(mobReview);
-      }
-      if (state.urgencyBadge) {
-        const urg = el('div', {style:{background:'#fdf2f8',border:'1px solid #fce4ec',borderRadius:'12px',padding:'12px',display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}});
-        urg.appendChild(el('div', {style:{width:'28px',height:'28px',borderRadius:'50%',background:'#fd026a',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',flexShrink:'0'}}, '\u2605'));
-        urg.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontWeight:'500'}}, 'Rare find! Laila is usually booked for these dates.'));
-        content.appendChild(urg);
-      }
-      // Trip summary
-      const trip = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',border:'1px solid #e5e5e5',marginBottom:'16px'}});
-      trip.appendChild(el('div', {style:{fontSize:'10px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'10px'}}, 'Your Trip'));
-      const tl = el('div', {style:{position:'relative',paddingLeft:'20px'}});
-      tl.appendChild(el('div', {style:{position:'absolute',left:'5px',top:'8px',bottom:'8px',width:'2px',background:'#e5e5e5'}}));
-      [['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28']].forEach(([d,dt],i) => {
-        const item = el('div', {style:{position:'relative',paddingBottom:i===0?'14px':'0'}});
-        item.appendChild(el('div', {style:{position:'absolute',left:'-20px',top:'4px',width:'12px',height:'12px',borderRadius:'50%',background:'white',border:'3px solid #fd026a'}}));
-        item.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, d));
-        item.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, dt));
-        tl.appendChild(item);
+      content.lastChild.style.marginBottom = '24px';
+      // Booking summary — hierarchical design
+      const summary3m = el('div', {style:{border:'1px solid #e8e8e8',borderRadius:'16px',overflow:'hidden',marginBottom:'20px'}});
+      // Nanny header
+      const nannyHdrM = el('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',background:'#fafafa',borderBottom:'1px solid #f0f0f0'}});
+      nannyHdrM.appendChild(el('div', {style:{width:'40px',height:'40px',borderRadius:'10px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
+      const nannyHdrTxtM = el('div');
+      nannyHdrTxtM.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'800',color:'#111'}}, 'Laila'));
+      nannyHdrTxtM.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'1px'}}, '\u2605 4.9 \u00b7 4 days \u00b7 Phuket + Krabi'));
+      nannyHdrM.appendChild(nannyHdrTxtM);
+      summary3m.appendChild(nannyHdrM);
+      // Trip dates
+      const tripSectM = el('div', {style:{padding:'12px 16px',borderBottom:'1px solid #f0f0f0'}});
+      tripSectM.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'6px'}}, 'Trip Dates'));
+      [['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28']].forEach(([dest,dates]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',padding:'2px 0'}});
+        row.append(el('span', {style:{fontSize:'12px',fontWeight:'600',color:'#333'}}, dest), el('span', {style:{fontSize:'11px',color:'#888'}}, dates));
+        tripSectM.appendChild(row);
       });
-      trip.appendChild(tl);
-      const priceDiv = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'12px',paddingTop:'12px'}});
+      summary3m.appendChild(tripSectM);
+      // Price
+      const priceSectM = el('div', {style:{padding:'12px 16px',borderBottom:'1px solid #f0f0f0'}});
+      priceSectM.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'6px'}}, 'Price'));
       [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
-        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'#666',padding:'4px 0'}});
-        row.append(el('span', null, l), el('span', null, v));
-        priceDiv.appendChild(row);
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',padding:'2px 0'}});
+        row.append(el('span', {style:{fontSize:'11px',color:'#888'}}, l), el('span', {style:{fontSize:'11px',color:'#555',fontWeight:'500'}}, v));
+        priceSectM.appendChild(row);
       });
-      trip.appendChild(priceDiv);
-      content.appendChild(trip);
-    } else {
-      content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, 'Pay & confirm'));
-      if (state.splitPayment) {
-        const mobSplitDesc = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
-        const mobSplit = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'16px',overflow:'hidden',marginBottom:'20px'}});
-        mobSplit.append(buildRadio('Pay $272.61 now', mobSplitDesc, true), buildRadio('Pay $545.22 now', "Pay the total and you're all set.", false));
-        content.appendChild(mobSplit);
-      }
-      content.appendChild(buildCardElement());
-      content.lastChild.style.marginBottom = '16px';
-      const trust = buildTrustBadges();
-      if (trust) { trust.style.marginBottom = '16px'; content.appendChild(trust); }
-      // Booking summary
-      const summary = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',marginBottom:'16px'}});
-      summary.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Booking summary'));
-      // Reservation details
-      [['Nanny','Laila'],['Phuket','Feb 25 \u2013 Feb 27'],['Krabi','Feb 27 \u2013 Feb 28'],['Duration','4 days']].forEach(([l,v]) => {
-        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
-        row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
-        summary.appendChild(row);
-      });
-      // Price breakdown
-      const priceSep = el('div', {style:{borderTop:'1px solid #e5e5e5',margin:'6px 0'}});
-      summary.appendChild(priceSep);
-      [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
-        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
-        row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
-        summary.appendChild(row);
-      });
-      const totalRow = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0',fontWeight:'700',color:'#111'}});
-      totalRow.append(el('span', null, 'Total'), el('span', null, '$545.22'));
-      summary.appendChild(totalRow);
+      const totalRow3m = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginTop:'8px',paddingTop:'8px',borderTop:'1px solid #ebebeb'}});
+      totalRow3m.append(el('span', {style:{fontSize:'12px',fontWeight:'700',color:'#111'}}, 'Total (USD)'), el('span', {style:{fontSize:'17px',fontWeight:'800',color:'#111'}}, '$545.22'));
+      priceSectM.appendChild(totalRow3m);
+      summary3m.appendChild(priceSectM);
       // Guest details
-      const guestSep = el('div', {style:{borderTop:'1px solid #e5e5e5',margin:'6px 0'}});
-      summary.appendChild(guestSep);
-      [['Name','Adam Oliver'],['Email','adam@email.com'],['Phone','+1 555 000-0000'],['Children','2'],['Phuket accommodation','Hotel Paradise']].forEach(([l,v]) => {
-        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
-        row.append(el('span', {style:{color:'#888'}}, l), el('span', {style:{color:'#333',fontWeight:'500'}}, v));
-        summary.appendChild(row);
+      const guestSectM = el('div', {style:{padding:'12px 16px'}});
+      guestSectM.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'6px'}}, 'Guest Details'));
+      [['Name','Adam Oliver'],['Email','adam@email.com'],['WhatsApp','+1 555 000-0000'],['Children','2'],['Phuket hotel','Hotel Paradise']].forEach(([l,v]) => {
+        const row = el('div', {style:{display:'flex',justifyContent:'space-between',padding:'2px 0'}});
+        row.append(el('span', {style:{fontSize:'11px',color:'#aaa',fontWeight:'500'}}, l), el('span', {style:{fontSize:'11px',color:'#333',fontWeight:'600'}}, v));
+        guestSectM.appendChild(row);
       });
-      summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onclick:()=>setStep(1)}, 'Edit details'));
-      content.appendChild(summary);
+      summary3m.appendChild(guestSectM);
+      content.appendChild(summary3m);
       // Cancel tiers
-      const tiers = el('div', {style:{marginBottom:'16px'}});
+      const tiers3m = el('div', {style:{marginBottom:'16px'}});
       [['#22c55e','Free cancel (net 5%)'],['#f59e0b','80% refund'],['#ef4444','No refund']].forEach(([c,t]) => {
         const tier = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'8px',padding:'4px 0',fontSize:'12px',color:'#666'}});
         tier.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:c,marginTop:'4px',flexShrink:'0'}}));
         tier.appendChild(el('span', null, t));
-        tiers.appendChild(tier);
+        tiers3m.appendChild(tier);
       });
-      content.appendChild(tiers);
+      content.appendChild(tiers3m);
       // Terms
-      const terms = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px'}});
-      const chk = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
-      chk.checked = true;
-      const txt = el('div', {style:{fontSize:'11px',color:'#888',lineHeight:'1.5'}});
+      const terms3m = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px'}});
+      const chk3m = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
+      chk3m.checked = true;
+      const txt3m = el('div', {style:{fontSize:'11px',color:'#888',lineHeight:'1.5'}});
       if (state.psyTerms) {
-        txt.appendChild(document.createTextNode('Your payment is secure. I agree to the '));
-        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Cancellation Policy'));
-        txt.appendChild(document.createTextNode(' and '));
-        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Terms'));
-        txt.appendChild(document.createTextNode('.'));
+        txt3m.appendChild(document.createTextNode('Your payment is secure. I agree to the '));
+        txt3m.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Cancellation Policy'));
+        txt3m.appendChild(document.createTextNode(' and '));
+        txt3m.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Terms'));
+        txt3m.appendChild(document.createTextNode('.'));
       } else {
-        txt.appendChild(document.createTextNode('I agree to the '));
-        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Cancellation Policy'));
-        txt.appendChild(document.createTextNode(' and '));
-        txt.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Terms'));
-        txt.appendChild(document.createTextNode('.'));
+        txt3m.appendChild(document.createTextNode('I agree to the '));
+        txt3m.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Cancellation Policy'));
+        txt3m.appendChild(document.createTextNode(' and '));
+        txt3m.appendChild(el('span', {style:{color:'#111',fontWeight:'700',textDecoration:'underline'}}, 'Terms'));
+        txt3m.appendChild(document.createTextNode('.'));
       }
-      terms.append(chk, txt);
-      content.appendChild(terms);
+      terms3m.append(chk3m, txt3m);
+      content.appendChild(terms3m);
     }
   } else {
     content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, pages[page-1]));
@@ -876,9 +1044,9 @@ function renderMobile() {
     priceWrap.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'700',textTransform:'uppercase',color:'#aaa',letterSpacing:'0.03em'}}, state.splitPayment?'Due today':'Total'));
     bar.appendChild(priceWrap);
   }
-  const maxSteps = state.flow==='new' ? 2 : 3;
-  const ctaLabels = state.flow==='new' ? ['Continue to payment', state.psyCta?'Secure Your Booking':'Confirm and pay'] : ['Next','Continue','Confirm & Reserve'];
-  const cta = el('button', {style:{flex:'1',padding:'14px',border:'none',borderRadius:state.cta==='pill'?'100px':'12px',fontSize:'14px',fontWeight:'700',color:'white',background:'#fd026a',cursor:'pointer',textAlign:'center'},onclick:()=>{if(state.step<maxSteps)setStep(state.step+1)}}, ctaLabels[page-1]);
+  const maxSteps = 3;
+  const ctaLabels = state.flow==='new' ? ['Continue to payment', 'Continue', state.psyCta?'Secure Your Booking':'Confirm and pay'] : ['Next','Continue','Confirm & Reserve'];
+  const cta = el('button', {style:{flex:'1',padding:'14px',border:'none',borderRadius:state.cta==='pill'?'100px':'12px',fontSize:'14px',fontWeight:'700',color:'white',background:'#fd026a',cursor:'pointer',textAlign:'center'},onClick:()=>{if(state.step<maxSteps)setStep(state.step+1)}}, ctaLabels[page-1]);
   bar.appendChild(cta);
   mock.appendChild(bar);
 
@@ -893,7 +1061,7 @@ function renderPreview() {
 
 function updatePrompt() {
   const parts = ['Implement the Nannimoon Checkout 3.0 redesign with these specifications:'];
-  if (state.flow !== 'current') parts.push('\n\nSTEP ORDER: 2-step flow — Your Details (+ booking review) \u2192 Payment & Confirm.');
+  if (state.flow !== 'current') parts.push('\n\nSTEP ORDER: 3-step flow — Review your booking (booking review + payment choice) \u2192 Payment Method (card details) \u2192 Complete Booking (personal details + summary + terms + confirm).');
   if (state.cta === 'pill') parts.push('\nCTA STYLE: All buttons use pill shape (rounded-full / border-radius: 100px) to match Nannimoon brand.');
   if (state.sidebar === 'itinerary') parts.push('\nSIDEBAR: Redesign as premium itinerary with vertical timeline dots, connecting line, reactive hotel names.');
   if (state.stripe === 'payment') parts.push('\nSTRIPE: Migrate from individual CardElements to unified PaymentElement (includes Apple Pay, Google Pay, Link). Requires PHP change to provide clientSecret.');
