@@ -98,9 +98,129 @@
     margin-top: 6px;
     letter-spacing: 0.01em;
   }
+
+  /* ── Calendar Modal ── */
+  .cal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; display:flex; align-items:center; justify-content:center; }
+  .cal-modal { background:white; border-radius:16px; padding:24px; width:340px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .cal-title { font-size:15px; font-weight:700; color:#111; }
+  .cal-nav { width:32px; height:32px; border:1px solid #e5e5e5; border-radius:8px; background:white; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; color:#555; }
+  .cal-nav:hover { background:#f5f5f5; }
+  .cal-days-header { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:6px; }
+  .cal-days-header span { text-align:center; font-size:11px; font-weight:700; color:#aaa; padding:4px 0; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:500; border-radius:8px; cursor:pointer; color:#333; transition:all 0.1s; }
+  .cal-day:hover:not(.empty):not(.disabled) { background:#f5f5f5; }
+  .cal-day.empty { cursor:default; }
+  .cal-day.disabled { color:#ccc; cursor:default; pointer-events:none; }
+  .cal-day.in-range { background:#fce4ec; border-radius:0; color:#c2185b; }
+  .cal-day.range-start, .cal-day.range-end { background:#fd026a; color:white; border-radius:8px; }
+  .cal-day.range-start { border-radius:8px 0 0 8px; }
+  .cal-day.range-end { border-radius:0 8px 8px 0; }
+  .cal-day.range-start.range-end { border-radius:8px; }
+  .cal-day.today { font-weight:800; }
+  .cal-footer { margin-top:20px; display:flex; gap:10px; }
+  .cal-footer button { flex:1; padding:12px; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; border:none; transition:all 0.15s; }
+  .cal-cancel-btn { background:#f5f5f5; color:#555; }
+  .cal-cancel-btn:hover { background:#eee; }
+  .cal-apply-btn { background:#fd026a; color:white; }
+  .cal-apply-btn:hover { background:#e0025f; }
+  .cal-apply-btn:disabled { background:#f0f0f0; color:#aaa; cursor:default; }
+  .cal-hint { text-align:center; font-size:12px; color:#aaa; margin-top:14px; }
+
+  /* ── Price Details Modal ── */
+  .price-modal { background:white; border-radius:16px; padding:24px; width:340px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  .price-modal-title { font-size:16px; font-weight:700; color:#111; margin-bottom:20px; }
+  .price-modal-row { display:flex; justify-content:space-between; font-size:14px; color:#555; padding:8px 0; border-bottom:1px solid #f5f5f5; }
+  .price-modal-row:last-of-type { border-bottom:none; }
+  .price-modal-row span:first-child { text-decoration:underline; text-underline-offset:2px; }
+  .price-modal-total { display:flex; justify-content:space-between; font-size:15px; font-weight:700; color:#111; padding-top:12px; margin-top:4px; border-top:2px solid #e5e5e5; }
+  .price-modal-close { width:100%; margin-top:20px; padding:12px; border-radius:10px; border:none; background:#f5f5f5; color:#555; font-size:14px; font-weight:700; cursor:pointer; }
+  .price-modal-close:hover { background:#eee; }
+
+  /* ── Cancellation Policy Modal ── */
+  .cancel-modal { background:white; border-radius:16px; padding:28px 24px 24px; width:360px; max-width:92vw; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }
+  .cancel-modal-close { position:absolute; top:20px; right:20px; width:32px; height:32px; border:none; background:none; font-size:18px; cursor:pointer; color:#555; display:flex; align-items:center; justify-content:center; }
+  .cancel-modal-title { font-size:22px; font-weight:700; color:#111; margin-bottom:24px; padding-right:32px; }
+  .cancel-policy-row { display:grid; grid-template-columns:100px 1fr; gap:12px; padding:20px 0; border-bottom:1px solid #e5e5e5; }
+  .cancel-policy-row:last-of-type { border-bottom:none; }
+  .cancel-policy-when { font-size:14px; color:#333; }
+  .cancel-policy-when strong { display:block; font-weight:700; margin-bottom:4px; }
+  .cancel-policy-what strong { display:block; font-size:14px; font-weight:700; color:#111; margin-bottom:4px; }
+  .cancel-policy-what p { font-size:14px; color:#555; line-height:1.5; margin:0; }
+  .cancel-modal-footer { font-size:13px; color:#777; margin-top:20px; padding-top:16px; border-top:1px solid #e5e5e5; line-height:1.5; }
 </style>
 </head>
 <body>
+<!-- What's included modal (hidden by default) -->
+<div class="cal-overlay" id="includedOverlay" style="display:none" onclick="handleIncludedOverlayClick(event)">
+  <div class="cancel-modal" onclick="event.stopPropagation()">
+    <button class="cancel-modal-close" onclick="closeIncluded()">&#10005;</button>
+    <div class="cancel-modal-title">What's included</div>
+    <div style="font-size:14px;color:#333;line-height:1.7;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#fd026a;font-weight:700;margin-top:1px">✓</span><span><strong>8 hours of service per day.</strong></span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#fd026a;font-weight:700;margin-top:1px">✓</span><span>Service hours will be set within the timeframe specified by the nanny.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#fd026a;font-weight:700;margin-top:1px">✓</span><span>Option to split service hours, if the nanny agrees.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#fd026a;font-weight:700;margin-top:1px">✓</span><span>Coverage of transportation costs.</span></div>
+    </div>
+    <div class="cancel-modal-footer"><strong>Note:</strong> Meals for the nanny should be agreed upon as part of the service expectations.</div>
+  </div>
+</div>
+
+<!-- Cancellation policy modal (hidden by default) -->
+<div class="cal-overlay" id="cancelPolicyOverlay" style="display:none" onclick="handleCancelPolicyOverlayClick(event)">
+  <div class="cancel-modal" onclick="event.stopPropagation()">
+    <button class="cancel-modal-close" onclick="closeCancelPolicy()">&#10005;</button>
+    <div class="cancel-modal-title">Cancellation policy</div>
+    <div class="cancel-policy-row">
+      <div class="cancel-policy-when"><strong>Before</strong>Mar 16<br>11:59 PM</div>
+      <div class="cancel-policy-what"><strong>Full refund</strong><p>Free cancellation (5% processing fee applies).</p></div>
+    </div>
+    <div class="cancel-policy-row">
+      <div class="cancel-policy-when"><strong>Before</strong>Apr 1<br>11:59 PM</div>
+      <div class="cancel-policy-what"><strong>Partial refund</strong><p>80% refund of the total amount. A 20% cancellation fee applies.</p></div>
+    </div>
+    <div class="cancel-policy-row">
+      <div class="cancel-policy-when"><strong>After</strong>Apr 1<br>11:59 PM</div>
+      <div class="cancel-policy-what"><strong>No refund</strong><p>This booking is non-refundable within 14 days of the service start date.</p></div>
+    </div>
+    <div class="cancel-modal-footer">Cancellation deadlines are based on the service start date and local time at the destination.</div>
+  </div>
+</div>
+
+<!-- Price details modal (hidden by default) -->
+<div class="cal-overlay" id="priceOverlay" style="display:none" onclick="handlePriceOverlayClick(event)">
+  <div class="price-modal" onclick="event.stopPropagation()">
+    <div class="price-modal-title">Price details</div>
+    <div class="price-modal-row"><span>₪89 × 4 days</span><span>₪356.00</span></div>
+    <div class="price-modal-row"><span>Accommodation</span><span>₪110.00</span></div>
+    <div class="price-modal-row"><span>Service fee</span><span>₪79.22</span></div>
+    <div class="price-modal-row"><span>Taxes &amp; fees</span><span>₪11.25</span></div>
+    <div class="price-modal-total"><span>Total (ILS)</span><span>₪346.47</span></div>
+    <button class="price-modal-close" onclick="closePriceDetails()">Close</button>
+  </div>
+</div>
+
+<!-- Calendar modal (hidden by default) -->
+<div class="cal-overlay" id="calOverlay" style="display:none" onclick="handleCalOverlayClick(event)">
+  <div class="cal-modal" onclick="event.stopPropagation()">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calPrevMonth()">&#8249;</button>
+      <div class="cal-title" id="calMonthTitle"></div>
+      <button class="cal-nav" onclick="calNextMonth()">&#8250;</button>
+    </div>
+    <div class="cal-days-header">
+      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-hint" id="calHint">Select check-in date</div>
+    <div class="cal-footer">
+      <button class="cal-cancel-btn" onclick="closeCalendar()">Cancel</button>
+      <button class="cal-apply-btn" id="calApplyBtn" onclick="applyCalendar()" disabled>Apply</button>
+    </div>
+  </div>
+</div>
+
 <div class="app">
   <div class="header">
     <h1>Nannimoon <span>Checkout 3.0</span> — UX Playground</h1>
@@ -186,7 +306,133 @@
 
 <script>
 const DEFAULTS = { view:'mobile', flow:'new', step:1, sidebar:'itinerary', stripe:'payment', cta:'pill', splitPayment:true, urgencyBadge:true, trustBadges:true, microcopy:true, cancelPill:true, collapsibleRules:true, actionCta:true, guestFav:true, psyTitle:true, psySubtitle:true, psyWhatsapp:true, psyStripeTrust:true, psyCta:true, psyTerms:true, psySidebarOwnership:true, psyNannyReview:true, psyPlaceholders:true, psyCancelCopy:true, psySplitCopy:true, psyProcessing:true };
-const state = { ...DEFAULTS };
+const state = { ...DEFAULTS, checkIn: new Date(2026, 3, 15), checkOut: new Date(2026, 3, 17) };
+
+// ── Date helpers ──
+function formatTripDate(d) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate();
+}
+function formatTripRange() {
+  return formatTripDate(state.checkIn) + ' \u2013 ' + formatTripDate(state.checkOut);
+}
+
+// ── What's included modal ──
+function openIncluded() { document.getElementById('includedOverlay').style.display = 'flex'; }
+function closeIncluded() { document.getElementById('includedOverlay').style.display = 'none'; }
+function handleIncludedOverlayClick(e) { if (e.target === e.currentTarget) closeIncluded(); }
+
+// ── Cancellation policy modal ──
+function openCancelPolicy() { document.getElementById('cancelPolicyOverlay').style.display = 'flex'; }
+function closeCancelPolicy() { document.getElementById('cancelPolicyOverlay').style.display = 'none'; }
+function handleCancelPolicyOverlayClick(e) { if (e.target === e.currentTarget) closeCancelPolicy(); }
+
+// ── Price details modal ──
+function openPriceDetails() { document.getElementById('priceOverlay').style.display = 'flex'; }
+function closePriceDetails() { document.getElementById('priceOverlay').style.display = 'none'; }
+function handlePriceOverlayClick(e) { if (e.target === e.currentTarget) closePriceDetails(); }
+
+// ── Calendar state ──
+let calViewYear, calViewMonth, calPickStart, calPickEnd;
+
+function openCalendar() {
+  calPickStart = null; calPickEnd = null;
+  calViewYear = state.checkIn.getFullYear();
+  calViewMonth = state.checkIn.getMonth();
+  renderCalendar();
+  document.getElementById('calOverlay').style.display = 'flex';
+}
+function closeCalendar() {
+  document.getElementById('calOverlay').style.display = 'none';
+}
+function handleCalOverlayClick(e) { if (e.target === e.currentTarget) closeCalendar(); }
+
+function applyCalendar() {
+  if (!calPickStart || !calPickEnd) return;
+  state.checkIn = calPickStart;
+  state.checkOut = calPickEnd;
+  closeCalendar();
+  updateAll();
+}
+
+function calPrevMonth() {
+  calViewMonth--;
+  if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+  renderCalendar();
+}
+function calNextMonth() {
+  calViewMonth++;
+  if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthTitle').textContent = monthNames[calViewMonth] + ' ' + calViewYear;
+
+  const grid = document.getElementById('calGrid');
+  grid.replaceChildren();
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
+  const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    grid.appendChild(el('div', {class:'cal-day empty'}));
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calViewYear, calViewMonth, d);
+    const isPast = date < today;
+    const isStart = calPickStart && date.getTime() === calPickStart.getTime();
+    const isEnd = calPickEnd && date.getTime() === calPickEnd.getTime();
+    const inRange = calPickStart && calPickEnd && date > calPickStart && date < calPickEnd;
+    const isToday = date.getTime() === today.getTime();
+
+    let classes = 'cal-day';
+    if (isPast) classes += ' disabled';
+    if (isStart) classes += ' range-start';
+    if (isEnd) classes += ' range-end';
+    if (inRange) classes += ' in-range';
+    if (isToday) classes += ' today';
+
+    const dayEl = el('div', {class: classes}, String(d));
+    if (!isPast) {
+      dayEl.onclick = (function(dt) { return function() {
+        if (!calPickStart || (calPickStart && calPickEnd)) {
+          calPickStart = dt; calPickEnd = null;
+        } else if (dt > calPickStart) {
+          calPickEnd = dt;
+        } else {
+          calPickStart = dt; calPickEnd = null;
+        }
+        updateCalHint();
+        renderCalendar();
+      }; })(new Date(date));
+    }
+    grid.appendChild(dayEl);
+  }
+
+  updateCalHint();
+}
+
+function updateCalHint() {
+  const hint = document.getElementById('calHint');
+  const applyBtn = document.getElementById('calApplyBtn');
+  if (!calPickStart) {
+    hint.textContent = 'Select check-in date';
+    applyBtn.disabled = true;
+  } else if (!calPickEnd) {
+    hint.textContent = 'Now select check-out date';
+    applyBtn.disabled = true;
+  } else {
+    const nights = Math.round((calPickEnd - calPickStart) / 86400000);
+    hint.textContent = nights + ' night' + (nights !== 1 ? 's' : '');
+    applyBtn.disabled = false;
+  }
+}
 
 function updateAll() { renderPreview(); updatePrompt(); updateBadges(); }
 
@@ -230,7 +476,7 @@ function syncControls() {
 
 function getSteps() {
   if (state.flow==='current') return state.splitPayment ? ['Choose when to pay','Add a payment method','Review your request'] : ['Add a payment method','Review your request'];
-  return ['Review your booking', 'Payment Method', 'Complete Booking'];
+  return ['Choose when to pay', 'Payment Method', 'Complete Booking'];
 }
 
 function el(tag, attrs, children) {
@@ -326,7 +572,6 @@ function buildSidebar() {
   const info = el('div');
   if (state.psySidebarOwnership) {
     info.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'700',color:'#333'}}, 'Your nanny: Laila'));
-    info.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, 'Professional childcare for your family'));
   } else {
     info.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'700',color:'#333'}}, 'Professional Childcare with Laila'));
   }
@@ -334,7 +579,6 @@ function buildSidebar() {
   rating.appendChild(el('span', {style:{color:'#fd026a'}}, '\u2605 '));
   rating.appendChild(document.createTextNode('4.9 (42 reviews)'));
   info.appendChild(rating);
-  if (state.guestFav) info.appendChild(el('div', {style:{display:'inline-block',fontSize:'9px',fontWeight:'700',background:'#fce4ec',color:'#fd026a',padding:'2px 8px',borderRadius:'100px',marginTop:'4px'}}, 'Guest favorite'));
   nanny.append(avatar, info);
   card.appendChild(nanny);
   if (state.psyNannyReview) {
@@ -344,53 +588,47 @@ function buildSidebar() {
     card.appendChild(review);
   }
 
-  // Urgency
-  if (state.urgencyBadge) {
-    const urg = el('div', {style:{background:'#fdf2f8',border:'1px solid #fce4ec',borderRadius:'12px',padding:'12px',display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}});
-    urg.appendChild(el('div', {style:{width:'28px',height:'28px',borderRadius:'50%',background:'#fd026a',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',flexShrink:'0'}}, '\u2605'));
-    urg.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontWeight:'500',lineHeight:'1.4'}}, 'Rare find! Laila is usually booked for these dates.'));
-    card.appendChild(urg);
-  }
 
-  // Itinerary
-  const itin = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
-  const itinLabel = state.psySidebarOwnership ? 'Your Trip' : (state.sidebar==='itinerary'?'Your Trip':'Itinerary');
-  itin.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'10px'}}, itinLabel));
+  // Dates (minimalist row)
+  const datesRow = el('div', {style:{padding:'14px 0',borderTop:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}});
+  const datesLeft = el('div');
+  datesLeft.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111',marginBottom:'3px'}}, 'Dates'));
+  datesLeft.appendChild(el('div', {style:{fontSize:'13px',color:'#555'}}, formatTripRange()));
+  const changeBtn = el('button', {style:{padding:'8px 16px',background:'#f0f0f0',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'600',color:'#333',cursor:'pointer',flexShrink:'0'}}, 'Change');
+  changeBtn.onclick = openCalendar;
+  datesRow.append(datesLeft, changeBtn);
+  card.appendChild(datesRow);
 
-  if (state.sidebar === 'itinerary') {
-    const tl = el('div', {style:{position:'relative',paddingLeft:'20px'}});
-    const line = el('div', {style:{position:'absolute',left:'5px',top:'8px',bottom:'8px',width:'2px',background:'#e5e5e5'}});
-    tl.appendChild(line);
-    [['Phuket','Feb 25 \u2013 Feb 27','Hotel Paradise'],['Krabi','Feb 27 \u2013 Feb 28','Villa Sunset']].forEach(([dest,dates,hotel],i) => {
-      const item = el('div', {style:{position:'relative',paddingBottom: i===0?'14px':'0'}});
-      item.appendChild(el('div', {style:{position:'absolute',left:'-20px',top:'4px',width:'12px',height:'12px',borderRadius:'50%',background:'white',border:'3px solid #fd026a'}}));
-      item.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, dest));
-      item.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, dates));
-      item.appendChild(el('div', {style:{fontSize:'10px',color:'#fd026a',marginTop:'2px',fontStyle:'italic'}}, hotel));
-      tl.appendChild(item);
-    });
-    itin.appendChild(tl);
-  } else {
-    [['Phuket','25/02 \u2013 27/02'],['Krabi','27/02 \u2013 28/02']].forEach(([name,dates]) => {
-      const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'12px',padding:'4px 0'}});
-      row.append(el('span', {style:{color:'#666'}}, '\uD83D\uDCCD ' + name), el('span', {style:{color:'#333',fontWeight:'500'}}, dates));
-      itin.appendChild(row);
-    });
-  }
-  card.appendChild(itin);
+  // What's included
+  const included = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0',display:'flex',alignItems:'center',justifyContent:'space-between'}});
+  const includedLeft = el('div');
+  includedLeft.appendChild(el('div', {style:{fontSize:'12px',fontWeight:'700',color:'#333',marginBottom:'3px'}}, "What's included"));
+  includedLeft.appendChild(el('div', {style:{fontSize:'11px',color:'#888'}}, '8 hrs/day · transport covered'));
+  const includedBtn = el('button', {style:{padding:'8px 16px',background:'#f0f0f0',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'600',color:'#333',cursor:'pointer',flexShrink:'0'}}, 'Details');
+  includedBtn.onclick = openIncluded;
+  included.append(includedLeft, includedBtn);
+  card.appendChild(included);
 
-  // Free cancel
+  // Free cancel (always text style like mobile)
   const cancel = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
-  if (state.cancelPill) {
-    cancel.appendChild(el('div', {style:{display:'inline-flex',alignItems:'center',gap:'6px',background:'#dcfce7',color:'#166534',fontSize:'11px',fontWeight:'600',padding:'5px 12px',borderRadius:'100px'}}, '\u2713 Free cancellation \u2014 12 days remaining'));
-    if (state.psyCancelCopy) {
-      cancel.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'6px',marginLeft:'2px'}}, 'Change of plans? No penalty before Jan 25.'));
-    }
-  } else {
-    cancel.appendChild(el('div', {style:{fontSize:'12px',fontWeight:'700',color:'#333',marginBottom:'4px'}}, 'Free cancellation'));
-    cancel.appendChild(el('div', {style:{fontSize:'11px',color:'#888'}}, state.psyCancelCopy ? 'Change of plans? No penalty before Jan 25, 2026.' : 'Cancel before Jan 25, 2026 for a full refund.'));
-  }
+  cancel.appendChild(el('div', {style:{fontSize:'12px',fontWeight:'700',color:'#333',marginBottom:'4px'}}, 'Free cancellation'));
+  const cancelDescSb = el('div', {style:{fontSize:'11px',color:'#888',lineHeight:'1.5'}});
+  cancelDescSb.appendChild(document.createTextNode('Cancel before March 16 for a full refund. '));
+  const fullPolicySb = el('span', {style:{textDecoration:'underline',cursor:'pointer',fontWeight:'500',color:'#333'}}, 'Full policy');
+  fullPolicySb.onclick = openCancelPolicy;
+  cancelDescSb.appendChild(fullPolicySb);
+  cancel.appendChild(cancelDescSb);
   card.appendChild(cancel);
+
+  // Promo code
+  const promoWrapSb = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
+  const promoRowSb = el('div', {style:{display:'flex',gap:'8px'}});
+  const promoInputSb = el('input', {type:'text',placeholder:'Enter Promo code',style:{flex:'1',padding:'10px 14px',fontSize:'13px',color:'#555',border:'1px solid #e5e5e5',borderRadius:'10px',outline:'none',background:'white'}});
+  const promoBtnSb = el('button', {style:{padding:'10px 16px',background:'#fd026a',color:'white',border:'none',borderRadius:'10px',fontSize:'13px',fontWeight:'700',cursor:'pointer',flexShrink:'0',letterSpacing:'0.04em',display:'none'}}, 'APPLY');
+  promoInputSb.addEventListener('input', function() { promoBtnSb.style.display = this.value.trim() ? 'block' : 'none'; });
+  promoRowSb.append(promoInputSb, promoBtnSb);
+  promoWrapSb.appendChild(promoRowSb);
+  card.appendChild(promoWrapSb);
 
   // Price
   const price = el('div', {style:{padding:'12px 0',borderTop:'1px solid #f0f0f0'}});
@@ -413,15 +651,6 @@ function buildSidebar() {
   price.appendChild(total);
   card.appendChild(price);
 
-  // Trust
-  const trust = buildTrustBadges();
-  if (trust) {
-    trust.style.paddingTop = '12px';
-    trust.style.borderTop = '1px solid #f0f0f0';
-    trust.style.marginTop = '12px';
-    card.appendChild(trust);
-  }
-
   return card;
 }
 
@@ -439,15 +668,14 @@ function buildStepContent(stepName) {
     row2.append(buildField('Email','','adam@email.com', emailMicro), buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', whatsappMicro));
     wrap.appendChild(row2);
     const row2b = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
-    row2b.append(buildField(state.psyPlaceholders ? 'How many children?' : 'Number of Children','','2'));
+    row2b.append(buildField('Country','',''), buildField(state.psyPlaceholders ? 'How many children?' : 'Number of Children','','2'));
     wrap.appendChild(row2b);
     const row3 = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
-    const accomPlaceholder = state.psyPlaceholders ? 'e.g., Banyan Tree Phuket' : 'Where are you staying?';
-    row3.append(buildField('Phuket Hotel / Villa', accomPlaceholder,'',null,true), buildField('Krabi Hotel / Villa', state.psyPlaceholders?'e.g., Rayavadee Krabi':'Where are you staying?','',null,true));
+    row3.append(buildField('Phuket Accommodation','','',null,true), buildField('Krabi Accommodation','','',null,true));
     wrap.appendChild(row3);
     wrap.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm' or 'nut allergy'":'Allergies, special needs, etc.','',null,true));
     const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'16px'}});
-    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, state.actionCta?'Continue to payment':'Next'));
+    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, 'Continue'));
     wrap.appendChild(btnWrap);
   }
 
@@ -507,39 +735,6 @@ function buildStepContent(stepName) {
     summary.appendChild(el('div', {style:{fontSize:'11px',fontWeight:'700',color:'#111',textDecoration:'underline',cursor:'pointer',marginTop:'8px'},onClick:()=>setStep(1)}, 'Edit details'));
     wrap.appendChild(summary);
 
-    // Rules
-    if (state.collapsibleRules) {
-      const rules = el('div', {style:{border:'1px solid #f0f0f0',borderRadius:'12px',overflow:'hidden',marginBottom:'16px'}});
-      const hdr = el('div', {style:{padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontSize:'14px',fontWeight:'600',color:'#333',background:'#fafafa'}});
-      hdr.appendChild(document.createTextNode('House rules for your booking'));
-      const chevron = el('span', {style:{fontSize:'12px',color:'#aaa',transition:'transform 0.2s'}}, '\u25BC');
-      hdr.appendChild(chevron);
-      const body = el('div', {style:{padding:'0 16px',maxHeight:'0',overflow:'hidden',transition:'all 0.3s'}});
-      body.appendChild(el('div', {style:{paddingTop:'16px',paddingBottom:'16px'}}));
-      hdr.addEventListener('click', () => {
-        if (body.style.maxHeight === '0px' || body.style.maxHeight === '0') {
-          body.style.maxHeight = '300px';
-          body.style.padding = '16px';
-          chevron.style.transform = 'rotate(180deg)';
-        } else {
-          body.style.maxHeight = '0';
-          body.style.padding = '0 16px';
-          chevron.style.transform = '';
-        }
-      });
-      const poolWarn = el('div', {style:{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:'10px',padding:'12px',marginBottom:'10px',fontSize:'11px',color:'#991b1b'}});
-      poolWarn.appendChild(el('strong', null, '\u26A0 Pool Supervision: '));
-      poolWarn.appendChild(document.createTextNode('Nannies supervise children at the pool only when a parent is present.'));
-      body.firstChild.appendChild(poolWarn);
-      [['\uD83C\uDF7D\uFE0F','Invite to family meals or provide 200 THB per meal.'],['\uD83D\uDC65','Strictly for one family only. Shared services not permitted.']].forEach(([icon,text]) => {
-        const item = el('div', {style:{fontSize:'12px',color:'#666',padding:'6px 0',display:'flex',alignItems:'flex-start',gap:'8px'}});
-        item.append(el('span', {style:{fontSize:'14px',flexShrink:'0'}}, icon), el('span', null, text));
-        body.firstChild.appendChild(item);
-      });
-      rules.append(hdr, body);
-      wrap.appendChild(rules);
-    }
-
     // Cancel tiers
     const tiers = el('div', {style:{marginBottom:'16px'}});
     tiers.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Cancellation Policy'));
@@ -579,9 +774,6 @@ function buildStepContent(stepName) {
     const ctaText = state.psyCta ? 'Secure Your Booking' : 'Confirm & Reserve';
     const ctaBtn = el('button', {style:{width:'100%',marginTop:'20px',padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#fd026a',borderRadius:br}}, ctaText);
     wrap.appendChild(ctaBtn);
-    if (state.psySubtitle) {
-      wrap.appendChild(el('div', {style:{textAlign:'center',fontSize:'11px',color:'#999',marginTop:'8px'}}, 'Your 4-day trip with Laila is ready to confirm.'));
-    }
   }
 
   else if (stepName === 'Confirm & reserve') {
@@ -590,12 +782,24 @@ function buildStepContent(stepName) {
   }
 
   else if (stepName === 'Choose when to pay') {
-    const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'12px',overflow:'hidden',marginBottom:'20px'}});
-    split.append(buildRadio('Pay $545.22 now','Pay the total and you\'re all set.',false), buildRadio('Pay $272.61 now','$272.61 charged on Feb 18. No extra fees.',true));
-    wrap.appendChild(split);
-    const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end'}});
-    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:'12px'}}, 'Next'));
-    wrap.appendChild(btnWrap);
+    if (state.flow === 'current') {
+      const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'12px',overflow:'hidden',marginBottom:'20px'}});
+      split.append(buildRadio('Pay $545.22 now','Pay the total and you\'re all set.',false), buildRadio('Pay $272.61 now','$272.61 charged on Feb 18. No extra fees.',true));
+      wrap.appendChild(split);
+      const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end'}});
+      btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:'12px'}}, 'Next'));
+      wrap.appendChild(btnWrap);
+    } else {
+      if (state.splitPayment) {
+        const splitDesc = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
+        const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:state.cta==='pill'?'16px':'12px',overflow:'hidden',marginBottom:'20px'}});
+        split.append(buildRadio('Pay $272.61 now', splitDesc, true), buildRadio('Pay $545.22 now',"Pay the total and you're all set.",false));
+        wrap.appendChild(split);
+      }
+      const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'16px'}});
+      btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, 'Continue'));
+      wrap.appendChild(btnWrap);
+    }
   }
 
   else if (stepName === 'Review your request') {
@@ -603,22 +807,8 @@ function buildStepContent(stepName) {
     return buildStepContent('Your details');
   }
 
-  else if (stepName === 'Review your booking') {
-    if (state.splitPayment) {
-      const splitDesc = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
-      const split = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:state.cta==='pill'?'16px':'12px',overflow:'hidden',marginBottom:'20px'}});
-      split.append(buildRadio('Pay $272.61 now', splitDesc, true), buildRadio('Pay $545.22 now',"Pay the total and you're all set.",false));
-      wrap.appendChild(split);
-    }
-    const btnWrap = el('div', {style:{display:'flex',justifyContent:'flex-end',marginTop:'16px'}});
-    btnWrap.appendChild(el('button', {style:{padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#111',borderRadius:br}}, 'Continue to payment'));
-    wrap.appendChild(btnWrap);
-  }
-
   else if (stepName === 'Payment Method') {
     wrap.appendChild(buildCardElement());
-    const trust = buildTrustBadges();
-    if (trust) wrap.appendChild(trust);
     const notCharged = el('div', {style:{display:'flex',alignItems:'center',gap:'8px',marginTop:'20px',marginBottom:'4px',padding:'10px 14px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'10px',fontSize:'12px',color:'#15803d',fontWeight:'500'}});
     notCharged.appendChild(el('span', {style:{fontSize:'15px'}}, '\uD83D\uDD12'));
     notCharged.appendChild(document.createTextNode("You won't be charged yet — review your booking and confirm on the next step."));
@@ -640,25 +830,16 @@ function buildStepContent(stepName) {
     row2d.append(buildField('Email','','adam@email.com', emailMicrod), buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', whatsappMicrod));
     wrap.appendChild(row2d);
     const row3d = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
-    row3d.append(buildField(state.psyPlaceholders?'How many children?':'Number of Children','','2'));
+    row3d.append(buildField('Country','',''), buildField(state.psyPlaceholders?'How many children?':'Number of Children','','2'));
     wrap.appendChild(row3d);
     const row4d = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
-    row4d.append(buildField('Phuket Hotel / Villa', state.psyPlaceholders?'e.g., Banyan Tree Phuket':'Where are you staying?','',null,true), buildField('Krabi Hotel / Villa', state.psyPlaceholders?'e.g., Rayavadee Krabi':'Where are you staying?','',null,true));
+    row4d.append(buildField('Phuket Accommodation','','',null,true), buildField('Krabi Accommodation','','',null,true));
     wrap.appendChild(row4d);
     wrap.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm' or 'nut allergy'":'Allergies, special needs, etc.','',null,true));
     wrap.lastChild.style.marginBottom = '24px';
 
     // Booking summary — designed with clear visual hierarchy
     const summary3 = el('div', {style:{border:'1px solid #e8e8e8',borderRadius:'16px',overflow:'hidden',marginBottom:'20px'}});
-
-    // Nanny header row
-    const nannyHdr = el('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'16px',background:'#fafafa',borderBottom:'1px solid #f0f0f0'}});
-    nannyHdr.appendChild(el('div', {style:{width:'44px',height:'44px',borderRadius:'10px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
-    const nannyHdrTxt = el('div');
-    nannyHdrTxt.appendChild(el('div', {style:{fontSize:'15px',fontWeight:'800',color:'#111',lineHeight:'1.2'}}, 'Laila'));
-    nannyHdrTxt.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, '\u2605 4.9 \u00b7 4 days \u00b7 Phuket + Krabi'));
-    nannyHdr.appendChild(nannyHdrTxt);
-    summary3.appendChild(nannyHdr);
 
     // Trip dates section
     const tripSect = el('div', {style:{padding:'14px 16px',borderBottom:'1px solid #f0f0f0'}});
@@ -683,55 +864,8 @@ function buildStepContent(stepName) {
     priceSect.appendChild(totalRow3);
     summary3.appendChild(priceSect);
 
-    // Guest details section
-    const guestSect = el('div', {style:{padding:'14px 16px'}});
-    guestSect.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'8px'}}, 'Guest Details'));
-    [['Name','Adam Oliver'],['Email','adam@email.com'],['WhatsApp','+1 555 000-0000'],['Children','2'],['Phuket hotel','Hotel Paradise']].forEach(([l,v]) => {
-      const row = el('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',padding:'3px 0'}});
-      row.append(el('span', {style:{fontSize:'11px',color:'#aaa',fontWeight:'500'}}, l), el('span', {style:{fontSize:'12px',color:'#333',fontWeight:'600'}}, v));
-      guestSect.appendChild(row);
-    });
-    summary3.appendChild(guestSect);
 
     wrap.appendChild(summary3);
-
-    if (state.collapsibleRules) {
-      const rules3 = el('div', {style:{border:'1px solid #f0f0f0',borderRadius:'12px',overflow:'hidden',marginBottom:'16px'}});
-      const hdr3 = el('div', {style:{padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontSize:'14px',fontWeight:'600',color:'#333',background:'#fafafa'}});
-      hdr3.appendChild(document.createTextNode('House rules for your booking'));
-      const chev3 = el('span', {style:{fontSize:'12px',color:'#aaa',transition:'transform 0.2s'}}, '\u25BC');
-      hdr3.appendChild(chev3);
-      const body3 = el('div', {style:{padding:'0 16px',maxHeight:'0',overflow:'hidden',transition:'all 0.3s'}});
-      body3.appendChild(el('div', {style:{paddingTop:'16px',paddingBottom:'16px'}}));
-      hdr3.addEventListener('click', () => {
-        if (body3.style.maxHeight === '0px' || body3.style.maxHeight === '0') { body3.style.maxHeight = '300px'; body3.style.padding = '16px'; chev3.style.transform = 'rotate(180deg)'; }
-        else { body3.style.maxHeight = '0'; body3.style.padding = '0 16px'; chev3.style.transform = ''; }
-      });
-      const poolWarn3 = el('div', {style:{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:'10px',padding:'12px',marginBottom:'10px',fontSize:'11px',color:'#991b1b'}});
-      poolWarn3.appendChild(el('strong', null, '\u26A0 Pool Supervision: '));
-      poolWarn3.appendChild(document.createTextNode('Nannies supervise children at the pool only when a parent is present.'));
-      body3.firstChild.appendChild(poolWarn3);
-      [['\uD83C\uDF7D\uFE0F','Invite to family meals or provide 200 THB per meal.'],['\uD83D\uDC65','Strictly for one family only. Shared services not permitted.']].forEach(([icon,text]) => {
-        const item = el('div', {style:{fontSize:'12px',color:'#666',padding:'6px 0',display:'flex',alignItems:'flex-start',gap:'8px'}});
-        item.append(el('span', {style:{fontSize:'14px',flexShrink:'0'}}, icon), el('span', null, text));
-        body3.firstChild.appendChild(item);
-      });
-      rules3.append(hdr3, body3);
-      wrap.appendChild(rules3);
-    }
-
-    const tiers3 = el('div', {style:{marginBottom:'16px'}});
-    tiers3.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#333',marginBottom:'10px'}}, 'Cancellation Policy'));
-    [['#22c55e','Free cancellation (net of 5% processing fees)'],['#f59e0b','Partial refund (80%)'],['#ef4444','No refund']].forEach(([color,text]) => {
-      const tier = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'8px',padding:'4px 0',fontSize:'12px',color:'#666'}});
-      tier.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:color,marginTop:'4px',flexShrink:'0'}}));
-      tier.appendChild(el('span', null, text));
-      tiers3.appendChild(tier);
-    });
-    const trial3 = el('div', {style:{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',padding:'10px 12px',fontSize:'11px',color:'#1e40af',marginTop:'8px',display:'flex',alignItems:'flex-start',gap:'8px'}});
-    trial3.append(el('span', null, '\u267B'), el('span', null, '72-hour trial period: If there\'s no connection, we replace her at no cost or issue a refund.'));
-    tiers3.appendChild(trial3);
-    wrap.appendChild(tiers3);
 
     const terms3 = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px',marginTop:'16px'}});
     const check3 = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
@@ -756,9 +890,6 @@ function buildStepContent(stepName) {
     const ctaText3 = state.psyCta ? 'Secure Your Booking' : 'Confirm & Reserve';
     const ctaBtn3 = el('button', {style:{width:'100%',marginTop:'20px',padding:'14px 32px',fontSize:'15px',fontWeight:'700',border:'none',cursor:'pointer',color:'white',background:'#fd026a',borderRadius:br}}, ctaText3);
     wrap.appendChild(ctaBtn3);
-    if (state.psySubtitle) {
-      wrap.appendChild(el('div', {style:{textAlign:'center',fontSize:'11px',color:'#999',marginTop:'8px'}}, 'Your 4-day trip with Laila is ready to confirm.'));
-    }
   }
 
   return wrap;
@@ -869,7 +1000,6 @@ function renderMobile() {
       const info1 = el('div');
       if (state.psySidebarOwnership) {
         info1.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Your nanny: Laila'));
-        info1.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, 'Professional childcare for your family'));
       } else {
         info1.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#333'}}, 'Professional Care with Laila'));
       }
@@ -877,7 +1007,6 @@ function renderMobile() {
       rat1.appendChild(el('span', {style:{color:'#fd026a'}}, '\u2605 '));
       rat1.appendChild(document.createTextNode('4.9 (42 reviews)'));
       info1.appendChild(rat1);
-      if (state.guestFav) info1.appendChild(el('div', {style:{display:'inline-block',fontSize:'9px',fontWeight:'700',background:'#fce4ec',color:'#fd026a',padding:'2px 8px',borderRadius:'100px',marginTop:'4px'}}, 'Guest favorite'));
       nanny1.appendChild(info1);
       content.appendChild(nanny1);
       if (state.psyNannyReview) {
@@ -886,43 +1015,60 @@ function renderMobile() {
         mobReview.appendChild(el('div', {style:{fontSize:'10px',color:'#999',marginTop:'4px',fontWeight:'600'}}, '\u2014 Sarah T., London'));
         content.appendChild(mobReview);
       }
-      if (state.urgencyBadge) {
-        const urg1 = el('div', {style:{background:'#fdf2f8',border:'1px solid #fce4ec',borderRadius:'12px',padding:'12px',display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}});
-        urg1.appendChild(el('div', {style:{width:'28px',height:'28px',borderRadius:'50%',background:'#fd026a',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',flexShrink:'0'}}, '\u2605'));
-        urg1.appendChild(el('div', {style:{fontSize:'11px',color:'#555',fontWeight:'500'}}, 'Rare find! Laila is usually booked for these dates.'));
-        content.appendChild(urg1);
-      }
-      // Trip timeline
+      // Trip section (minimalist dates)
       const trip1 = el('div', {style:{background:'#fafafa',borderRadius:'12px',padding:'16px',border:'1px solid #e5e5e5',marginBottom:'16px'}});
-      trip1.appendChild(el('div', {style:{fontSize:'10px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'10px'}}, state.psySidebarOwnership?'Your Trip':'Trip Itinerary'));
-      const tl1 = el('div', {style:{position:'relative',paddingLeft:'20px'}});
-      tl1.appendChild(el('div', {style:{position:'absolute',left:'5px',top:'8px',bottom:'8px',width:'2px',background:'#e5e5e5'}}));
-      [['Phuket','Feb 25 \u2013 Feb 27','Hotel Paradise'],['Krabi','Feb 27 \u2013 Feb 28','Villa Sunset']].forEach(([d,dt,hotel],i) => {
-        const item = el('div', {style:{position:'relative',paddingBottom:i===0?'14px':'0'}});
-        item.appendChild(el('div', {style:{position:'absolute',left:'-20px',top:'4px',width:'12px',height:'12px',borderRadius:'50%',background:'white',border:'3px solid #fd026a'}}));
-        item.appendChild(el('div', {style:{fontSize:'13px',fontWeight:'600',color:'#333'}}, d));
-        item.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'2px'}}, dt));
-        item.appendChild(el('div', {style:{fontSize:'10px',color:'#fd026a',marginTop:'2px',fontStyle:'italic'}}, hotel));
-        tl1.appendChild(item);
-      });
-      trip1.appendChild(tl1);
-      // Price breakdown
-      const priceDiv1 = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'12px',paddingTop:'12px'}});
-      [['$89 \u00d7 4 days','$356.00'],['Accommodation','$110.00'],['Service fee','$79.22']].forEach(([l,v]) => {
-        const row = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'13px',color:'#666',padding:'4px 0'}});
-        row.append(el('span', null, l), el('span', null, v));
-        priceDiv1.appendChild(row);
-      });
-      const total1 = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'14px',fontWeight:'700',color:'#111',paddingTop:'8px',marginTop:'4px',borderTop:'1px solid #f0f0f0'}});
-      total1.append(el('span', null, 'Total (USD)'), el('span', null, '$545.22'));
-      priceDiv1.appendChild(total1);
-      if (state.cancelPill) {
-        priceDiv1.appendChild(el('div', {style:{display:'inline-flex',alignItems:'center',gap:'6px',background:'#dcfce7',color:'#166534',fontSize:'11px',fontWeight:'600',padding:'5px 12px',borderRadius:'100px',marginTop:'8px'}}, '\u2713 Free cancellation \u2014 12 days remaining'));
-      }
+      const mobDatesRow = el('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}});
+      const mobDatesLeft = el('div');
+      mobDatesLeft.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111',marginBottom:'3px'}}, 'Dates'));
+      mobDatesLeft.appendChild(el('div', {style:{fontSize:'13px',color:'#555'}}, formatTripRange()));
+      const mobChangeBtn = el('button', {style:{padding:'8px 16px',background:'#eaeaea',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'600',color:'#333',cursor:'pointer',flexShrink:'0'}}, 'Change');
+      mobChangeBtn.onclick = openCalendar;
+      mobDatesRow.append(mobDatesLeft, mobChangeBtn);
+      trip1.appendChild(mobDatesRow);
+      // Price total row (minimalist)
+      const priceDiv1 = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'0',paddingTop:'14px'}});
+      const mobPriceRow = el('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between'}});
+      const mobPriceLeft = el('div');
+      mobPriceLeft.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111',marginBottom:'3px'}}, 'Total price'));
+      const mobPriceAmt = el('div', {style:{fontSize:'13px',color:'#555'}});
+      mobPriceAmt.appendChild(document.createTextNode('\u20AA346.47 '));
+      const ilsSpan = el('span', {style:{textDecoration:'underline',textUnderlineOffset:'2px'}}, 'ILS');
+      mobPriceAmt.appendChild(ilsSpan);
+      mobPriceLeft.appendChild(mobPriceAmt);
+      const detailsBtn = el('button', {style:{padding:'8px 16px',background:'#eaeaea',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'600',color:'#333',cursor:'pointer',flexShrink:'0'}}, 'Details');
+      detailsBtn.onclick = openPriceDetails;
+      mobPriceRow.append(mobPriceLeft, detailsBtn);
+      priceDiv1.appendChild(mobPriceRow);
       trip1.appendChild(priceDiv1);
+      // What's included section
+      const includedSect = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'14px',paddingTop:'14px',display:'flex',alignItems:'center',justifyContent:'space-between'}});
+      const includedSectLeft = el('div');
+      includedSectLeft.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111'}}, "What's included"));
+      const includedBtnM = el('button', {style:{padding:'8px 16px',background:'#eaeaea',border:'none',borderRadius:'8px',fontSize:'13px',fontWeight:'600',color:'#333',cursor:'pointer',flexShrink:'0'}}, 'Details');
+      includedBtnM.onclick = openIncluded;
+      includedSect.append(includedSectLeft, includedBtnM);
+      trip1.appendChild(includedSect);
+      // Free cancellation section
+      const cancelSect = el('div', {style:{borderTop:'1px solid #e5e5e5',marginTop:'14px',paddingTop:'14px'}});
+      cancelSect.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'700',color:'#111',marginBottom:'4px'}}, 'Free cancellation'));
+      const cancelDesc = el('div', {style:{fontSize:'13px',color:'#555',lineHeight:'1.5'}});
+      cancelDesc.appendChild(document.createTextNode('Cancel before March 16 for a full refund. '));
+      const fullPolicy = el('span', {style:{textDecoration:'underline',cursor:'pointer',fontWeight:'500',color:'#111'}}, 'Full policy');
+      fullPolicy.onclick = openCancelPolicy;
+      cancelDesc.appendChild(fullPolicy);
+      cancelSect.appendChild(cancelDesc);
+      trip1.appendChild(cancelSect);
       content.appendChild(trip1);
+      // Promo code
+      const promoWrap = el('div', {style:{display:'flex',gap:'10px',margin:'20px 0 0'}});
+      const promoInput = el('input', {type:'text',placeholder:'Enter Promo code',style:{flex:'1',padding:'14px 16px',fontSize:'14px',color:'#555',border:'1px solid #e5e5e5',borderRadius:'12px',outline:'none',background:'white'}});
+      const promoBtn = el('button', {style:{padding:'14px 22px',background:'#fd026a',color:'white',border:'none',borderRadius:'12px',fontSize:'14px',fontWeight:'700',cursor:'pointer',flexShrink:'0',letterSpacing:'0.04em',display:'none'}}, 'APPLY');
+      promoInput.addEventListener('input', function() { promoBtn.style.display = this.value.trim() ? 'block' : 'none'; });
+      promoWrap.append(promoInput, promoBtn);
+      content.appendChild(promoWrap);
       // Split payment
       if (state.splitPayment) {
+        content.appendChild(el('div', {style:{fontSize:'16px',fontWeight:'700',color:'#111',margin:'20px 0 12px'}}, 'Choose when to pay'));
         const mobSplitDesc1 = state.psySplitCopy ? '$272.61 charged on Feb 18, 2026. No extra fees, no interest. Automatic charge.' : '$272.61 charged on Feb 18, 2026. No extra fees.';
         const mobSplit1 = el('div', {style:{border:'1px solid #e5e5e5',borderRadius:'16px',overflow:'hidden',marginBottom:'8px'}});
         mobSplit1.append(buildRadio('Pay $272.61 now', mobSplitDesc1, true), buildRadio('Pay $545.22 now', "Pay the total and you're all set.", false));
@@ -933,12 +1079,6 @@ function renderMobile() {
       content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, 'Payment method'));
       content.appendChild(buildCardElement());
       content.lastChild.style.marginBottom = '16px';
-      const trust2 = buildTrustBadges();
-      if (trust2) { trust2.style.marginBottom = '16px'; content.appendChild(trust2); }
-      const notChargedM = el('div', {style:{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'10px',fontSize:'12px',color:'#15803d',fontWeight:'500'}});
-      notChargedM.appendChild(el('span', {style:{fontSize:'15px'}}, '\uD83D\uDD12'));
-      notChargedM.appendChild(document.createTextNode("You won't be charged yet — confirm on the next step."));
-      content.appendChild(notChargedM);
     } else {
       // Page 3: Complete Booking
       content.appendChild(el('div', {style:{fontSize:'20px',fontWeight:'700',color:'#111',marginBottom:'20px'}}, state.psyTitle?'Complete your booking':'Confirm your booking'));
@@ -951,22 +1091,15 @@ function renderMobile() {
       content.lastChild.style.marginBottom = '16px';
       content.appendChild(buildField('WhatsApp Phone','+1 (555) 000-0000','+1 555 000-0000', state.psyWhatsapp?"We'll send your nanny's intro and trip updates here":'For WhatsApp booking updates'));
       content.lastChild.style.marginBottom = '16px';
-      content.appendChild(buildField(state.psyPlaceholders?'How many children?':'Number of Children','','2'));
-      content.lastChild.style.marginBottom = '16px';
-      content.appendChild(buildField('Phuket Hotel / Villa', state.psyPlaceholders?'e.g., Banyan Tree Phuket':'Where are you staying?','',null,true));
+      const row3m = el('div', {style:{display:'flex',gap:'16px',marginBottom:'16px'}});
+      row3m.append(buildField('Country','',''), buildField(state.psyPlaceholders?'How many children?':'Number of Children','','2'));
+      content.appendChild(row3m);
+      content.appendChild(buildField('Phuket Accommodation','','',null,true));
       content.lastChild.style.marginBottom = '16px';
       content.appendChild(buildField('Special Requests', state.psyPlaceholders?"e.g., 'My toddler naps at 1pm'":'Allergies, special needs...','',null,true));
       content.lastChild.style.marginBottom = '24px';
       // Booking summary — hierarchical design
       const summary3m = el('div', {style:{border:'1px solid #e8e8e8',borderRadius:'16px',overflow:'hidden',marginBottom:'20px'}});
-      // Nanny header
-      const nannyHdrM = el('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',background:'#fafafa',borderBottom:'1px solid #f0f0f0'}});
-      nannyHdrM.appendChild(el('div', {style:{width:'40px',height:'40px',borderRadius:'10px',background:'linear-gradient(135deg,#fce4ec,#f8bbd0)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:'700',color:'#fd026a',flexShrink:'0'}}, 'L'));
-      const nannyHdrTxtM = el('div');
-      nannyHdrTxtM.appendChild(el('div', {style:{fontSize:'14px',fontWeight:'800',color:'#111'}}, 'Laila'));
-      nannyHdrTxtM.appendChild(el('div', {style:{fontSize:'11px',color:'#999',marginTop:'1px'}}, '\u2605 4.9 \u00b7 4 days \u00b7 Phuket + Krabi'));
-      nannyHdrM.appendChild(nannyHdrTxtM);
-      summary3m.appendChild(nannyHdrM);
       // Trip dates
       const tripSectM = el('div', {style:{padding:'12px 16px',borderBottom:'1px solid #f0f0f0'}});
       tripSectM.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'6px'}}, 'Trip Dates'));
@@ -990,23 +1123,7 @@ function renderMobile() {
       summary3m.appendChild(priceSectM);
       // Guest details
       const guestSectM = el('div', {style:{padding:'12px 16px'}});
-      guestSectM.appendChild(el('div', {style:{fontSize:'9px',fontWeight:'800',textTransform:'uppercase',letterSpacing:'0.1em',color:'#bbb',marginBottom:'6px'}}, 'Guest Details'));
-      [['Name','Adam Oliver'],['Email','adam@email.com'],['WhatsApp','+1 555 000-0000'],['Children','2'],['Phuket hotel','Hotel Paradise']].forEach(([l,v]) => {
-        const row = el('div', {style:{display:'flex',justifyContent:'space-between',padding:'2px 0'}});
-        row.append(el('span', {style:{fontSize:'11px',color:'#aaa',fontWeight:'500'}}, l), el('span', {style:{fontSize:'11px',color:'#333',fontWeight:'600'}}, v));
-        guestSectM.appendChild(row);
-      });
-      summary3m.appendChild(guestSectM);
       content.appendChild(summary3m);
-      // Cancel tiers
-      const tiers3m = el('div', {style:{marginBottom:'16px'}});
-      [['#22c55e','Free cancel (net 5%)'],['#f59e0b','80% refund'],['#ef4444','No refund']].forEach(([c,t]) => {
-        const tier = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'8px',padding:'4px 0',fontSize:'12px',color:'#666'}});
-        tier.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:c,marginTop:'4px',flexShrink:'0'}}));
-        tier.appendChild(el('span', null, t));
-        tiers3m.appendChild(tier);
-      });
-      content.appendChild(tiers3m);
       // Terms
       const terms3m = el('div', {style:{display:'flex',alignItems:'flex-start',gap:'10px'}});
       const chk3m = el('input', {type:'checkbox',style:{width:'18px',height:'18px',accentColor:'#fd026a',marginTop:'2px',flexShrink:'0'}});
@@ -1035,6 +1152,13 @@ function renderMobile() {
 
   mock.appendChild(content);
 
+  // "Not charged" notice above sticky bar on page 2
+  if (page === 2) {
+    const notChargedM = el('div', {style:{position:'absolute',bottom:'72px',left:'0',right:'0',padding:'8px 20px',background:'#f0fdf4',borderTop:'1px solid #bbf7d0',fontSize:'12px',color:'#15803d',fontWeight:'500',textAlign:'center'}});
+    notChargedM.appendChild(document.createTextNode("You won't be charged yet — confirm on the next step."));
+    mock.appendChild(notChargedM);
+  }
+
   // Sticky bar
   const bar = el('div', {style:{position:'absolute',bottom:'0',left:'0',right:'0',background:'white',borderTop:'1px solid #f0f0f0',padding:'14px 20px',display:'flex',alignItems:'center',gap:'16px',boxShadow:'0 -4px 12px rgba(0,0,0,0.05)'}});
   const showPrice = !(state.flow==='new' && page===1);
@@ -1045,7 +1169,7 @@ function renderMobile() {
     bar.appendChild(priceWrap);
   }
   const maxSteps = 3;
-  const ctaLabels = state.flow==='new' ? ['Continue to payment', 'Continue', state.psyCta?'Secure Your Booking':'Confirm and pay'] : ['Next','Continue','Confirm & Reserve'];
+  const ctaLabels = state.flow==='new' ? ['Continue', 'Continue', state.psyCta?'Secure Your Booking':'Confirm and pay'] : ['Next','Continue','Confirm & Reserve'];
   const cta = el('button', {style:{flex:'1',padding:'14px',border:'none',borderRadius:state.cta==='pill'?'100px':'12px',fontSize:'14px',fontWeight:'700',color:'white',background:'#fd026a',cursor:'pointer',textAlign:'center'},onClick:()=>{if(state.step<maxSteps)setStep(state.step+1)}}, ctaLabels[page-1]);
   bar.appendChild(cta);
   mock.appendChild(bar);
